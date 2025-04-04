@@ -20,7 +20,7 @@ type TableSchema<T> = {
 }[keyof T][];
 
 export default class BunLiteDB<
-    TableNames extends string, 
+    TableNames extends string,
     Schema extends Record<TableNames, Record<string, unknown>>
 > {
 
@@ -48,14 +48,14 @@ export default class BunLiteDB<
      * const database = new BunLiteDB<keyof DatabaseSchema, DatabaseSchema>(":memory:");
      */
     constructor(
-        dbName: `${string}.SQLite` | ":memory:", 
-        tableNames: TableNames[], 
+        dbName: `${string}.SQLite` | ":memory:",
+        tableNames: TableNames[],
         opts?: ConstructorParameters<typeof Database>[1]
     ) {
 
         const newOpts = typeof opts === "number" ? opts : {
             ...opts,
-            create: true, 
+            create: true,
             strict: true,
         }
 
@@ -84,7 +84,6 @@ export default class BunLiteDB<
         this.db.exec(`PRAGMA foreign_keys = ${mode};`);
     }
 
-    
     /**
      * Getter for the underlying Bun Database. Useful if you want to excecute your own queries.
      *
@@ -123,7 +122,7 @@ export default class BunLiteDB<
      * @throws {SQLError} If table creation fails
      */
     createTable<TableName extends TableNames>(
-        tableName: TableName, 
+        tableName: TableName,
         columns: TableSchema<Schema[TableName]>
     ): void {
         this.validateTableName(tableName);
@@ -154,7 +153,7 @@ export default class BunLiteDB<
      * @throws {Error} If table name is invalid or insert fails
      */
     insertRecord<TableName extends TableNames>(
-        tableName: TableName, 
+        tableName: TableName,
         values: Partial<Schema[TableName]>
     ): void {
         this.validateTableName(tableName);
