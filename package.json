@@ -1,13 +1,17 @@
 {
   "name": "bunlite-typed",
   "version": "0.1.0",
-  "module": "index.ts",
+  "module": "./src/index.ts",
   "type": "module",
-  "private": true,
+  "private": false,
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "scripts": {
+    "build": "tsc --emitDeclarationOnly",
+    "typecheck": "tsc --noEmit"
   }
 }

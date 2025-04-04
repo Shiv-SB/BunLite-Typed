@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB from "..";
+import BunLiteDB from '../src/index';
 
 type TestSchema = {
     Users: {
