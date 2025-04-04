@@ -3,15 +3,17 @@
     // Environment and features
     "lib": ["ESNext"],
     "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "allowJs": true,
+    "esModuleInterop": true,
 
     // Type declaration generation
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
+    "emitDeclarationOnly": false,
 
     // Best practices
     "strict": true,

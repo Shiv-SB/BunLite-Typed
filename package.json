@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "module": "./src/index.ts",
   "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Shivarjun Bhogal"
+  },
   "private": false,
+  "engines": {
+    "bun": ">=1.2.0"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -11,7 +18,7 @@
     "typescript": "^5"
   },
   "scripts": {
-    "build": "tsc --emitDeclarationOnly",
+    "build": "tsc",
     "typecheck": "tsc --noEmit"
   }
 }
