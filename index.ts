@@ -70,7 +70,7 @@ export default class DbConnector<
      * @param mode "ON" to enable foreign key constraints, "OFF" to disable
      */
     public setForeignKeyMode(mode: "ON" | "OFF"): void {
-        this.db?.exec(`PRAGMA foreign_keys = ${mode};`);
+        this.db.exec(`PRAGMA foreign_keys = ${mode};`);
     }
 
     
@@ -91,7 +91,7 @@ export default class DbConnector<
      * @returns Array of column information from PRAGMA table_info
      */
     public getSchema(tableName: TableNames) { // TODO: Add proper typing for this
-        return this.db!.query(`PRAGMA table_info(${tableName})`).all();
+        return this.db.query(`PRAGMA table_info(${tableName})`).all();
     }
 
     /**
@@ -130,7 +130,7 @@ export default class DbConnector<
 
         try {
             const createTableQuery: string = `CREATE TABLE IF NOT EXISTS ${tableName} (${columnsDefinition})`;
-            this.db!.run(createTableQuery);
+            this.db.run(createTableQuery);
         } catch (error) {
             throw new SQLError(`Error creating table ${tableName}: ${error}`);
         }
@@ -154,7 +154,7 @@ export default class DbConnector<
         const insertQuery: string = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
 
         const insertValues: any[] = Object.values(values);
-        this.db!.run(insertQuery, ...insertValues);
+        this.db.run(insertQuery, ...insertValues);
     }
 
     /**
@@ -185,7 +185,7 @@ export default class DbConnector<
             ON CONFLICT(${conflictColumn.toString()}) DO UPDATE SET ${updateClause}`;
 
         const upsertValues: any[] = Object.values(values);
-        this.db!.run(upsertQuery, ...upsertValues);
+        this.db.run(upsertQuery, ...upsertValues);
     }
 
     /**
@@ -200,10 +200,10 @@ export default class DbConnector<
         let fetchQuery: string = `SELECT * FROM ${tableName}`;
         if (limit) {
             fetchQuery += ` LIMIT ?`;
-            const results = this.db!.query(fetchQuery).all(limit);
+            const results = this.db.query(fetchQuery).all(limit);
             return results as Schema[TableName][];
         } else {
-            const results = this.db!.query(fetchQuery).all();
+            const results = this.db.query(fetchQuery).all();
             return results as Schema[TableName][];
         }
     }
@@ -223,7 +223,7 @@ export default class DbConnector<
     ): Schema[TableName][] {
         this.validateTableName(tableName);
         const fetchQuery: string = `SELECT * FROM ${tableName} WHERE ${condition}`;
-        const results: unknown[] = this.db!.query(fetchQuery).all(...values);
+        const results: unknown[] = this.db.query(fetchQuery).all(...values);
         return results as Schema[TableName][];
     }
 
@@ -236,11 +236,11 @@ export default class DbConnector<
         this.validateTableName(tableName);
         try {
             const schemaQuery: string = `SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`;
-            const result = this.db!.query(schemaQuery).all();
+            const result = this.db.query(schemaQuery).all();
 
             if (result.length > 0) {
                 const dropQuery: string = `DROP TABLE ${tableName}`;
-                this.db!.run(dropQuery);
+                this.db.run(dropQuery);
             } else {
                 console.warn(`Table ${tableName} does not exist.`);
             }
@@ -253,6 +253,6 @@ export default class DbConnector<
      * Safely closes the database connection
      */
     closeConnection(): void {
-        this.db!.close(false);
+        this.db.close(false);
     }
 }
