@@ -19,6 +19,17 @@ type TableSchema<T> = {
     };
 }[keyof T][];
 
+type SQLiteTypes = "TEXT" | "INTEGER" | "DECIMAL" | "BLOB" | "NULL";
+
+type OutputSchema<Columns> = {
+    cid: number;
+    name: keyof Columns;
+    type: SQLiteTypes;
+    notnull: 0 | 1;
+    dflt_value: any;
+    pk: 0 | 1;
+}[]
+
 export default class BunLiteDB<
     TableNames extends string,
     Schema extends Record<TableNames, Record<string, unknown>>
@@ -100,8 +111,9 @@ export default class BunLiteDB<
      * @param tableName Name of the table to get schema for
      * @returns Array of column information from PRAGMA table_info
      */
-    public getSchema(tableName: TableNames) { // TODO: Add proper typing for this
-        return this.db.query(`PRAGMA table_info(${tableName})`).all();
+    public getSchema<TableName extends TableNames>(tableName: TableNames): OutputSchema<Schema[TableName]> {
+        this.validateTableName(tableName);
+        return this.db.query(`PRAGMA table_info(${tableName})`).all() as unknown as OutputSchema<Schema[TableName]>;
     }
 
     /**
@@ -251,6 +263,7 @@ export default class BunLiteDB<
             if (result.length > 0) {
                 const dropQuery: string = `DROP TABLE ${tableName}`;
                 this.db.run(dropQuery);
+                this.tableNames.delete(tableName);
             } else {
                 console.warn(`Table ${tableName} does not exist.`);
             }
