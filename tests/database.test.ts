@@ -59,8 +59,9 @@ describe("BunLiteDB", () => {
         // Test fetch
         const records = db.fetchAllRecords("Users");
         expect(records.length).toBe(1);
-        expect(records[0].name).toBe("Test User");
-        expect(records[0].email).toBe("test@example.com");
+        const firstRecord = records[0];
+        expect(firstRecord?.name).toBe("Test User");
+        expect(firstRecord?.email).toBe("test@example.com");
     });
 
     test("upsert records", () => {
@@ -85,7 +86,8 @@ describe("BunLiteDB", () => {
 
         const records = db.fetchAllRecords("Users");
         expect(records.length).toBe(1);
-        expect(records[0].name).toBe("Updated User");
+        const firstRecord = records[0];
+        expect(firstRecord?.name).toBe("Updated User");
     });
 
     test("fetch records with condition", () => {
@@ -106,7 +108,8 @@ describe("BunLiteDB", () => {
         );
 
         expect(records.length).toBe(1);
-        expect(records[0].email).toBe("user1@example.com");
+        const firstRecord = records[0];
+        expect(firstRecord?.email).toBe("user1@example.com");
     });
 
     test("delete table", () => {
@@ -138,6 +141,11 @@ describe("BunLiteDB", () => {
         db.insertRecord("Users", { name: "Test User" });
         const users = db.fetchAllRecords("Users");
         
+        // Add null check before accessing users array
+        if (users.length === 0 || !users[0]?.id) {
+            throw new Error("Failed to create user record");
+        }
+
         db.insertRecord("Posts", {
             userId: users[0].id,
             title: "Test Post",
@@ -146,7 +154,8 @@ describe("BunLiteDB", () => {
 
         const posts = db.fetchAllRecords("Posts");
         expect(posts.length).toBe(1);
-        expect(posts[0].userId).toBe(users[0].id);
+        const firstPost = posts[0];
+        expect(firstPost?.userId).toBe(users[0].id);
     });
 });
 
