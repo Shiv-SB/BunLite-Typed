@@ -4,6 +4,10 @@
   "module": "./src/index.ts",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/Shiv-SB/BunLite-Typed"
+  },
+  "readme": "./README.md",
   "author": {
     "name": "Shivarjun Bhogal"
   },
