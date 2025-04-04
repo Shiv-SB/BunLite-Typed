@@ -101,6 +101,7 @@ export default class BunLiteDB<
      * @returns Array of column information from PRAGMA table_info
      */
     public getSchema(tableName: TableNames) { // TODO: Add proper typing for this
+        this.validateTableName(tableName);
         return this.db.query(`PRAGMA table_info(${tableName})`).all();
     }
 
@@ -251,6 +252,7 @@ export default class BunLiteDB<
             if (result.length > 0) {
                 const dropQuery: string = `DROP TABLE ${tableName}`;
                 this.db.run(dropQuery);
+                this.tableNames.delete(tableName);
             } else {
                 console.warn(`Table ${tableName} does not exist.`);
             }
