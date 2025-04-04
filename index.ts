@@ -19,7 +19,7 @@ type TableSchema<T> = {
     };
 }[keyof T][];
 
-export default class DbConnector<
+export default class BunLiteDB<
     TableNames extends string, 
     Schema extends Record<TableNames, Record<string, unknown>>
 > {
@@ -45,7 +45,7 @@ export default class DbConnector<
      *  }
      * }
      * 
-     * const database = new Database()
+     * const database = new BunLiteDB<keyof DatabaseSchema, DatabaseSchema>(":memory:");
      */
     constructor(dbName: `${string}.SQLite` | ":memory:", tableNames: TableNames[]) {
         this.tableNames = new Set(tableNames);
