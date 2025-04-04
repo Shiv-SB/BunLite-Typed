@@ -47,10 +47,21 @@ export default class BunLiteDB<
      * 
      * const database = new BunLiteDB<keyof DatabaseSchema, DatabaseSchema>(":memory:");
      */
-    constructor(dbName: `${string}.SQLite` | ":memory:", tableNames: TableNames[]) {
+    constructor(
+        dbName: `${string}.SQLite` | ":memory:", 
+        tableNames: TableNames[], 
+        opts?: ConstructorParameters<typeof Database>[1]
+    ) {
+
+        const newOpts = typeof opts === "number" ? opts : {
+            ...opts,
+            create: true, 
+            strict: true,
+        }
+
         this.tableNames = new Set(tableNames);
         try {
-            this.db = new Database(dbName, { create: true, strict: true });
+            this.db = new Database(dbName, newOpts);
             this.db.exec("PRAGMA journal_mode = WAL;");
             this.setForeignKeyMode("OFF");
         } catch (error: any) {
