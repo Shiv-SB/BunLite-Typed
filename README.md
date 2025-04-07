@@ -2,6 +2,7 @@
 [![Bun](https://img.shields.io/badge/Bun-%23000000.svg?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![npm version](https://img.shields.io/npm/v/bunlite-typed.svg?style=for-the-badge)](https://www.npmjs.com/package/bunlite-typed)
 
 A lightweight, type-safe ORM for Bun's SQLite. Designed to provide additional type safety when working with Bun's built-in SQLite library.
 
