@@ -5,12 +5,15 @@
 
 A lightweight, type-safe ORM for Bun's SQLite. Designed to provide additional type safety when working with Bun's built-in SQLite library.
 
+**[View on NPM](https://www.npmjs.com/package/bunlite-typed)** | **[GitHub Repository](https://github.com/Shiv-SB/BunLite-Typed)**
+
 ## Features
 - 🔒 Full TypeScript support with type inference
 - 🎯 Type-safe table operations
 - 🚦 Foreign key constraint management
 - 📝 Schema validation
 - 🔄 CRUD operations with type checking
+- 📦 Zero dependencies! - uses only Bun's built-in SQLite library
 
 ## Installation
 

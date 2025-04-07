@@ -1,6 +1,6 @@
 {
   "name": "bunlite-typed",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
@@ -20,6 +20,9 @@
     "access": "public",
     "tag": "latest"
   },
+  "keywords": [
+    "Bun", "SQLite", "ORM"
+  ],
   "devDependencies": {
     "@types/bun": "latest"
   },

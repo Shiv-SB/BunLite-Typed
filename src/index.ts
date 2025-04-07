@@ -7,9 +7,9 @@ class SQLError extends Error {
     }
 }
 
-type DataTypesPrimitive = "TEXT" | "INTEGER" | "DECIMAL" | "BLOB" | "NULL";
+type SQLiteTypes = "TEXT" | "INTEGER" | "DECIMAL" | "BLOB" | "NULL";
 type TableConstraints = "PRIMARY KEY" | "UNIQUE" | "NOT NULL" | "CHECK" | "FOREIGN KEY" | "AUTOINCREMENT";
-type DataTypes = DataTypesPrimitive | `${DataTypesPrimitive} ${TableConstraints}` | `${DataTypesPrimitive} ${TableConstraints} ${TableConstraints}`;
+type DataTypes = SQLiteTypes | `${SQLiteTypes} ${TableConstraints}` | `${SQLiteTypes} ${TableConstraints} ${TableConstraints}`;
 
 type TableSchema<T> = {
     [K in keyof T]: {
@@ -18,8 +18,6 @@ type TableSchema<T> = {
         foreignKey?: string;
     };
 }[keyof T][];
-
-type SQLiteTypes = "TEXT" | "INTEGER" | "DECIMAL" | "BLOB" | "NULL";
 
 type OutputSchema<Columns> = {
     cid: number;
