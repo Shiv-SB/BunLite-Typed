@@ -113,6 +113,20 @@ new BunLiteDB(dbName: string, tableNames: string[], opts?: DatabaseOptions)
 - Bun >= 1.2.0
 - TypeScript >= 5.0
 
+## Development
+
+### Building
+To build the project:
+```bash
+bun run build
+```
+
+### Testing
+To run the test suite:
+```bash
+bun test
+```
+
 ## License
 MIT License - feel free to use this in your projects!
 
