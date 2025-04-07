@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB from '../src/index.js';
+import BunLiteDB, { SQLError } from '../src/index';
 
 type TestSchema = {
     Users: {
@@ -14,6 +14,17 @@ type TestSchema = {
         content: string;
     };
 };
+
+describe("SQLError", () => {
+    test("should create SQLError with correct name and message", () => {
+        const errorMessage = "Test SQL error";
+        const error = new SQLError(errorMessage);
+        
+        expect(error).toBeInstanceOf(Error);
+        expect(error.name).toBe("SQLError");
+        expect(error.message).toBe(errorMessage);
+    });
+});
 
 describe("BunLiteDB", () => {
     let db: BunLiteDB<keyof TestSchema, TestSchema>;
