@@ -3,8 +3,8 @@
     // Environment and features
     "lib": ["ESNext"],
     "target": "ESNext",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "ES6",
+    "moduleResolution": "node",
     "allowJs": true,
     "esModuleInterop": true,
 
