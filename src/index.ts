@@ -34,6 +34,10 @@ type OutputSchema<Columns> = {
 
 type TableNames<T> = keyof T & string;
 
+type DbOptions = ConstructorParameters<typeof Database>[1] & {
+    writeAheadLog: boolean;
+}
+
 export default class BunLiteDB<Schema extends Record<string, Record<string, unknown>>> {
     private db: Database;
     private tableNames: Set<TableNames<Schema>>;
@@ -48,7 +52,7 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
     constructor(
         dbName: `${string}.SQLite` | ":memory:",
         tableNames?: TableNames<Schema>[],
-        opts?: ConstructorParameters<typeof Database>[1]
+        opts?: DbOptions
     ) {
         const newOpts = typeof opts === "number" ? opts : {
             create: true,
@@ -56,10 +60,13 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
             ...opts,
         };
 
+        const useWal: boolean = newOpts.writeAheadLog ?? true;
+
         try {
             this.db = new Database(dbName, newOpts);
-            this.db.exec("PRAGMA journal_mode = WAL;");
-            this.setForeignKeyMode("OFF");
+            if (useWal) {
+                this.db.exec("PRAGMA journal_mode = WAL;");
+            }
         } catch (error: any) {
             if (error.code === "SQLITE_CANTOPEN") {
                 throw new SQLError(`Unable to access database: "${dbName}". ${error}`);
@@ -88,7 +95,7 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
     }
 
     /**
-     * Sets the SQLite foreign key enforcement mode
+     * Sets the SQLite foreign key enforcement mode.
      * @param mode "ON" to enable foreign key constraints, "OFF" to disable
      */
     public setForeignKeyMode(mode: "ON" | "OFF"): void {
