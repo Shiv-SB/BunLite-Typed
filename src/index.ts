@@ -41,26 +41,13 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
     /**
      * Creates a new SQLite database connection
      * @param dbName Path to SQLite database file or ":memory:" for in-memory database
-     * @param tableNames Array of table names that will be used with this connection
+     * @param tableNames Optional array of table names that will be used with this connection. If not provided, existing tables will be used.
+     * @param opts Database connection options
      * @throws {SQLError} If database cannot be opened or initialized
-     * 
-     * @example
-     * interface DatabaseSchema {
-     *   UserTable: {
-     *     userID: string,
-     *     archived: boolean;
-     *   },
-     *   UserSessions: {
-     *     userID: string,
-     *     sessionCounter: number, 
-     *   }
-     * }
-     * 
-     * const database = new BunLiteDB<DatabaseSchema>(":memory:", ["UserTable", "UserSessions"]);
      */
     constructor(
         dbName: `${string}.SQLite` | ":memory:",
-        tableNames: TableNames<Schema>[],
+        tableNames?: TableNames<Schema>[],
         opts?: ConstructorParameters<typeof Database>[1]
     ) {
         const newOpts = typeof opts === "number" ? opts : {
@@ -69,7 +56,6 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
             strict: true,
         };
 
-        this.tableNames = new Set(tableNames);
         try {
             this.db = new Database(dbName, newOpts);
             this.db.exec("PRAGMA journal_mode = WAL;");
@@ -84,6 +70,21 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
         if (this.db === undefined) {
             throw new SQLError('Failed to construct database.');
         }
+
+        this.tableNames = tableNames 
+            ? new Set(tableNames)
+            : new Set(this.getExistingTableNames() as TableNames<Schema>[]);
+    }
+
+    /**
+     * Gets all existing table names from the database
+     * @private
+     * @returns Array of table names
+     */
+    private getExistingTableNames(): string[] {
+        const query = `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`;
+        const results = this.db.query(query).all() as { name: string }[];
+        return results.map(row => row.name);
     }
 
     /**
