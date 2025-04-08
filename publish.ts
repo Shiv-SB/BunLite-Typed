@@ -26,8 +26,15 @@ if (packageJSON.version === npmVersion) {
         
         if (!semverRegex.test(newVersion)) {
             console.warn(`${Bun.color("#ff0000", "ansi-16m")}    Invalid version format. Please use semantic versioning (e.g., 1.0.0)`);
+            continue;
         }
-    } while (!semverRegex.test(newVersion));
+
+        const versionComparison = Bun.semver.order(packageJSON.version, newVersion);
+        if (versionComparison >= 0) {
+            console.warn(`${Bun.color("#ff0000", "ansi-16m")}    New version must be greater than current version ${packageJSON.version}`);
+            continue;
+        }
+    } while (!semverRegex.test(newVersion) || Bun.semver.order(packageJSON.version, newVersion) >= 0);
     
     tempRl.close();
     

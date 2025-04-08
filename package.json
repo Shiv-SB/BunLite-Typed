@@ -21,7 +21,9 @@
     "tag": "latest"
   },
   "keywords": [
-    "Bun", "SQLite", "ORM"
+    "Bun",
+    "SQLite",
+    "ORM"
   ],
   "scripts": {
     "build": "tsc",
