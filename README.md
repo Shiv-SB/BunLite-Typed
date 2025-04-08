@@ -173,6 +173,12 @@ To run the test suite:
 bun test
 ```
 
+### Publishing
+To publish to NPM
+```bash
+bun publish.ts
+```
+
 ## License
 MIT License - feel free to use this in your projects!
 
