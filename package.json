@@ -1,6 +1,6 @@
 {
   "name": "bunlite-typed",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
@@ -21,16 +21,18 @@
     "tag": "latest"
   },
   "keywords": [
-    "Bun", "SQLite", "ORM"
+    "Bun",
+    "SQLite",
+    "ORM"
   ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit"
   }
 }

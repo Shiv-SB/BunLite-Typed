@@ -1,6 +1,6 @@
 import { Database, type SQLQueryBindings } from 'bun:sqlite';
 
-class SQLError extends Error {
+export class SQLError extends Error {
     constructor(message: string) {
         super(message);
         this.name = 'SQLError';
@@ -9,7 +9,11 @@ class SQLError extends Error {
 
 type SQLiteTypes = "TEXT" | "INTEGER" | "DECIMAL" | "BLOB" | "NULL";
 type TableConstraints = "PRIMARY KEY" | "UNIQUE" | "NOT NULL" | "CHECK" | "FOREIGN KEY" | "AUTOINCREMENT";
-type DataTypes = SQLiteTypes | `${SQLiteTypes} ${TableConstraints}` | `${SQLiteTypes} ${TableConstraints} ${TableConstraints}`;
+export type DataTypes = SQLiteTypes | 
+    `${SQLiteTypes} ${TableConstraints}` | 
+    `${SQLiteTypes} ${TableConstraints} ${TableConstraints}` |
+    `${SQLiteTypes} ${TableConstraints} ${TableConstraints} ${TableConstraints}` |
+    `${SQLiteTypes} ${TableConstraints} ${TableConstraints} ${TableConstraints} ${TableConstraints}`;
 
 type TableSchema<T> = {
     [K in keyof T]: {
@@ -120,8 +124,23 @@ export default class BunLiteDB<
      * @throws {Error} If table name is not in the allowed set
      */
     public validateTableName(tableName: string): asserts tableName is TableNames {
+        this.validateSQLiteIdentifier(tableName, 'table');
         if (!this.tableNames.has(tableName as TableNames)) {
             throw new Error(`Invalid table name: ${tableName}`);
+        }
+    }
+
+    /**
+     * Validates SQLite identifiers (table and column names)
+     * @param name Name of the identifier to validate
+     * @param type Type of the identifier ('table' or 'column')
+     * @throws {SQLError} If the identifier is invalid
+     */
+    private validateSQLiteIdentifier(name: string, type: 'table' | 'column'): void {
+        if (!name.match(/^[a-zA-Z_][a-zA-Z0-9_$]*$/)) {
+            throw new SQLError(
+                `Invalid ${type} name "${name}". ${type} names must start with a letter or underscore and contain only letters, numbers, underscores, or $.`
+            );
         }
     }
 
@@ -139,6 +158,7 @@ export default class BunLiteDB<
         const foreignKeys: string[] = [];
         const columnsDefinition: string = columns
             .map((col) => {
+                this.validateSQLiteIdentifier(String(col.name), 'column');
                 let columnDef = `${String(col.name)} ${col.type}`;
                 if (col.foreignKey) {
                     foreignKeys.push(`FOREIGN KEY(${String(col.name)}) ${col.foreignKey}`);
@@ -245,6 +265,57 @@ export default class BunLiteDB<
         const fetchQuery: string = `SELECT * FROM ${tableName} WHERE ${condition}`;
         const results: unknown[] = this.db.query(fetchQuery).all(...values);
         return results as Schema[TableName][];
+    }
+
+    /**
+     * Fetches records with pagination support
+     * @param tableName Name of the table to query
+     * @param page Page number (starts from 1)
+     * @param pageSize Number of records per page
+     * @returns Array of records for the requested page
+     * @throws {Error} If table name is invalid or pagination parameters are invalid
+     */
+    fetchRecordsWithPagination<TableName extends TableNames>(
+        tableName: TableName,
+        page: number,
+        pageSize: number
+    ): Schema[TableName][] {
+        this.validateTableName(tableName);
+        if (page < 1) throw new Error('Page number must be greater than 0');
+        if (pageSize < 1) throw new Error('Page size must be greater than 0');
+
+        const offset = (page - 1) * pageSize;
+        const query = `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`;
+        return this.db.query(query).all(pageSize, offset) as Schema[TableName][];
+    }
+
+    /**
+     * Creates an iterator that yields records one at a time
+     * @param tableName Name of the table to iterate
+     * @param batchSize Number of records to fetch per batch (default: 1000)
+     * @yields Records from the table one at a time
+     * @throws {Error} If table name is invalid
+     */
+    async *recordsIterator<TableName extends TableNames>(
+        tableName: TableName,
+        batchSize: number = 1000
+    ): AsyncGenerator<Schema[TableName], void, unknown> {
+        this.validateTableName(tableName);
+        let offset = 0;
+        
+        while (true) {
+            const query = `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`;
+            const batch = this.db.query(query).all(batchSize, offset) as Schema[TableName][];
+            
+            if (batch.length === 0) break;
+            
+            for (const record of batch) {
+                yield record;
+            }
+            
+            if (batch.length < batchSize) break;
+            offset += batchSize;
+        }
     }
 
     /**
