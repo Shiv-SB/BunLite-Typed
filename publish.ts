@@ -16,9 +16,18 @@ if (packageJSON.version === npmVersion) {
         output: process.stdout
     });
 
-    const newVersion = await new Promise<string>(resolve => 
-        tempRl.question(`${Bun.color("#00ffff", "ansi-16m")}    Enter new version: `, resolve)
-    );
+    const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+    let newVersion: string;
+    
+    do {
+        newVersion = await new Promise<string>(resolve => 
+            tempRl.question(`${Bun.color("#00ffff", "ansi-16m")}    Enter new version (semver format x.x.x): `, resolve)
+        );
+        
+        if (!semverRegex.test(newVersion)) {
+            console.warn(`${Bun.color("#ff0000", "ansi-16m")}    Invalid version format. Please use semantic versioning (e.g., 1.0.0)`);
+        }
+    } while (!semverRegex.test(newVersion));
     
     tempRl.close();
     
