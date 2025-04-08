@@ -124,8 +124,23 @@ export default class BunLiteDB<
      * @throws {Error} If table name is not in the allowed set
      */
     public validateTableName(tableName: string): asserts tableName is TableNames {
+        this.validateSQLiteIdentifier(tableName, 'table');
         if (!this.tableNames.has(tableName as TableNames)) {
             throw new Error(`Invalid table name: ${tableName}`);
+        }
+    }
+
+    /**
+     * Validates SQLite identifiers (table and column names)
+     * @param name Name of the identifier to validate
+     * @param type Type of the identifier ('table' or 'column')
+     * @throws {SQLError} If the identifier is invalid
+     */
+    private validateSQLiteIdentifier(name: string, type: 'table' | 'column'): void {
+        if (!name.match(/^[a-zA-Z_][a-zA-Z0-9_$]*$/)) {
+            throw new SQLError(
+                `Invalid ${type} name "${name}". ${type} names must start with a letter or underscore and contain only letters, numbers, underscores, or $.`
+            );
         }
     }
 
@@ -143,6 +158,7 @@ export default class BunLiteDB<
         const foreignKeys: string[] = [];
         const columnsDefinition: string = columns
             .map((col) => {
+                this.validateSQLiteIdentifier(String(col.name), 'column');
                 let columnDef = `${String(col.name)} ${col.type}`;
                 if (col.foreignKey) {
                     foreignKeys.push(`FOREIGN KEY(${String(col.name)}) ${col.foreignKey}`);

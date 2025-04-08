@@ -23,14 +23,15 @@
   "keywords": [
     "Bun", "SQLite", "ORM"
   ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "publish:npm": "bun test && bun run build && bun publish --dry-run && bun publish"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit"
   }
 }

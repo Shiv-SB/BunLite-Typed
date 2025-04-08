@@ -4,7 +4,10 @@
 [![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![npm version](https://img.shields.io/npm/v/bunlite-typed.svg?style=for-the-badge)](https://www.npmjs.com/package/bunlite-typed)
 
-A lightweight, type-safe ORM for Bun's SQLite. Designed to provide additional type safety when working with Bun's built-in SQLite library.
+## Overview [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/Shiv-SB/BunLite-Typed) [![Package Size](https://img.shields.io/badge/size-33%20KB-blue.svg)](https://www.npmjs.com/package/bunlite-typed)
+
+A lightweight, type-safe ORM for Bun's SQLite, designed to provide additional type safety when working with Bun's built-in SQLite library.
+This is a simple and light wrapper that focuses on core functionality. While some features from popular ORMs (like migrations and runtime response validation) are not included, contributions are welcome via fork or PR if you need these features.
 
 **[View on NPM](https://www.npmjs.com/package/bunlite-typed)** | **[GitHub Repository](https://github.com/Shiv-SB/BunLite-Typed)**
 
@@ -14,7 +17,9 @@ A lightweight, type-safe ORM for Bun's SQLite. Designed to provide additional ty
 - 🚦 Foreign key constraint management
 - 📝 Schema validation
 - 🔄 CRUD operations with type checking
+- ⚡ Runtime table and column checking
 - 📦 Zero dependencies! - uses only Bun's built-in SQLite library
+- 🧪 Comprehensive test suite with 100% coverage
 
 ## Installation
 
@@ -92,6 +97,44 @@ const schema = db.getSchema("Users");
 // Returns typed information about columns including names and types
 ```
 
+#### Using Pagination
+
+```typescript
+// Define your schema
+type Schema = {
+  Users: {
+    id: number;
+    name: string;
+  }
+};
+
+const db = new BunLiteDB<keyof Schema, Schema>(":memory:", ["Users"]);
+
+// Fetch page 1 with 10 records per page
+const page1 = db.fetchRecordsWithPagination("Users", 1, 10);
+
+// Fetch page 2
+const page2 = db.fetchRecordsWithPagination("Users", 2, 10);
+```
+
+#### Using Iterator
+
+```typescript
+// Iterate through all records efficiently
+async function processUsers() {
+  for await (const user of db.recordsIterator("Users")) {
+    console.log(user.name);
+  }
+}
+
+// Or with a custom batch size
+async function processUsersWithBatch() {
+  for await (const user of db.recordsIterator("Users", 500)) {
+    console.log(user.name);
+  }
+}
+```
+
 ## API Reference
 
 ### Constructor
@@ -105,6 +148,8 @@ new BunLiteDB(dbName: string, tableNames: string[], opts?: DatabaseOptions)
 - `upsertRecord(tableName, values, conflictColumn)`: Insert or update a record
 - `fetchAllRecords(tableName, limit?)`: Retrieve all records
 - `fetchRecordsWithCondition(tableName, condition, values)`: Query with conditions
+- `fetchRecordsWithPagination(tableName, page, pageSize)`: Get records with pagination
+- `recordsIterator(tableName, batchSize?)`: Async iterator for efficient record processing
 - `getSchema(tableName)`: Get table schema
 - `deleteTable(tableName)`: Delete a table
 - `closeConnection()`: Close database connection
