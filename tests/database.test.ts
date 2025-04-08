@@ -54,20 +54,17 @@ describe("BunLiteDB", () => {
     });
 
     test("insert and fetch records", () => {
-        // Setup
         db.createTable("Users", [
             { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
             { name: "name", type: "TEXT NOT NULL" },
             { name: "email", type: "TEXT UNIQUE" }
         ]);
 
-        // Test insert
         db.insertRecord("Users", {
             name: "Test User",
             email: "test@example.com"
         });
 
-        // Test fetch
         const records = db.fetchAllRecords("Users");
         expect(records.length).toBe(1);
         const firstRecord = records[0];
@@ -76,20 +73,17 @@ describe("BunLiteDB", () => {
     });
 
     test("upsert records", () => {
-        // Setup
         db.createTable("Users", [
             { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
             { name: "name", type: "TEXT NOT NULL" },
             { name: "email", type: "TEXT UNIQUE" }
         ]);
 
-        // Initial insert
         db.upsertRecord("Users", {
             name: "Test User",
             email: "test@example.com"
         }, "email");
 
-        // Update same record
         db.upsertRecord("Users", {
             name: "Updated User",
             email: "test@example.com"
@@ -102,7 +96,6 @@ describe("BunLiteDB", () => {
     });
 
     test("fetch records with condition", () => {
-        // Setup
         db.createTable("Users", [
             { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
             { name: "name", type: "TEXT NOT NULL" },
@@ -152,7 +145,6 @@ describe("BunLiteDB", () => {
         db.insertRecord("Users", { name: "Test User" });
         const users = db.fetchAllRecords("Users");
         
-        // Add null check before accessing users array
         if (users.length === 0 || !users[0]?.id) {
             throw new Error("Failed to create user record");
         }

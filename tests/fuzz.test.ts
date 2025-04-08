@@ -70,7 +70,7 @@ describe("BunLiteDB Fuzz Tests", () => {
 
         db.createTable(tableName, columns);
 
-        const recordCount = Math.floor(Math.random() * 50) + 1; // 1-50 records
+        const recordCount = Math.floor(Math.random() * 50) + 1;
         
         for (let i = 0; i < recordCount; i++) {
             const record = {

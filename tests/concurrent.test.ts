@@ -51,12 +51,10 @@ describe("Concurrent Operations", () => {
         const operations = 50;
         const promises = Array(operations).fill(0).map((_, i) => {
             return new Promise<void>((resolve) => {
-                // Write operation
                 db.insertRecord("Log", {
                     message: `Operation ${i}`,
                     timestamp: Date.now()
                 });
-                // Read operation
                 const logs = db.fetchAllRecords("Log");
                 expect(logs.length).toBeGreaterThan(0);
                 resolve();
@@ -69,12 +67,10 @@ describe("Concurrent Operations", () => {
     });
 
     test("parallel record iteration", async () => {
-        // Insert test data
         for (let i = 0; i < 1000; i++) {
             db.insertRecord("Counter", { value: i });
         }
 
-        // Create multiple parallel iterators
         const iteratorCount = 3;
         const results: number[][] = Array(iteratorCount).fill([]);
         
@@ -86,7 +82,6 @@ describe("Concurrent Operations", () => {
 
         await Promise.all(iteratorPromises);
         
-        // Verify each iterator got all records
         results.forEach(result => {
             expect(result.length).toBe(1000);
         });

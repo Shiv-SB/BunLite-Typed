@@ -43,7 +43,6 @@ describe("BunLiteDB Pagination", () => {
         const testUsers = createTestUsers(userCount);
         testUsers.forEach(user => db.insertRecord("Users", user));
 
-        // Test first page
         const firstPage = db.fetchRecordsWithPagination("Users", 1, pageSize);
         expect(firstPage.length).toBe(Math.min(pageSize, userCount));
         expect(firstPage[0].name).toBe(`User ${1}`);
@@ -59,7 +58,6 @@ describe("BunLiteDB Pagination", () => {
                 .toBe(`User ${Math.min(middlePageStart + pageSize - 1, userCount)}`);
         }
 
-        // Test last page
         const lastPage = db.fetchRecordsWithPagination("Users", totalPages, pageSize);
         const lastPageSize = userCount % pageSize || pageSize;
         const lastPageStart = ((totalPages - 1) * pageSize) + 1;
@@ -87,7 +85,6 @@ describe("BunLiteDB Pagination", () => {
         const testUsers = createTestUsers(userCount);
         testUsers.forEach(user => db.insertRecord("Users", user));
 
-        // Test iterator with default batch size
         let count = 0;
         for await (const record of db.recordsIterator("Users", defaultBatchSize)) {
             count++;
@@ -96,7 +93,6 @@ describe("BunLiteDB Pagination", () => {
         }
         expect(count).toBe(userCount);
 
-        // Test iterator with small batch size
         count = 0;
         for await (const record of db.recordsIterator("Users", smallBatchSize)) {
             count++;
@@ -105,7 +101,6 @@ describe("BunLiteDB Pagination", () => {
         }
         expect(count).toBe(userCount);
 
-        // Test iterator with batch size larger than data
         count = 0;
         for await (const record of db.recordsIterator("Users", largeBatchSize)) {
             count++;
