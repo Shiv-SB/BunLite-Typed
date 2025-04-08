@@ -51,9 +51,9 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
         opts?: ConstructorParameters<typeof Database>[1]
     ) {
         const newOpts = typeof opts === "number" ? opts : {
-            ...opts,
             create: true,
             strict: true,
+            ...opts,
         };
 
         try {
