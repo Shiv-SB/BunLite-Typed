@@ -1,5 +1,35 @@
 import { $ } from "bun";
 import readline from 'node:readline';
+import packageJSON from "./package.json";
+
+const npmRegistryDetails = await fetch("https://registry.npmjs.com/-/v1/search?text=bunlite-typed&size=20");
+const npmVersion: string = (await npmRegistryDetails.json()).objects[0].package.version;
+
+if (packageJSON.version === npmVersion) {
+    console.warn(`${Bun.color("#ffd700", "ansi-16m")}    You've forgotten to bump the version in package.json!`);
+    console.log(`${Bun.color("#00ffff", "ansi-16m")}    Running auto bumper`);
+    
+    console.log(`${Bun.color("#00ffff", "ansi-16m")}    Current Version in package.json: ${Bun.color("#ff00ff", "ansi-16m")}${packageJSON.version}`);
+
+    const tempRl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    const newVersion = await new Promise<string>(resolve => 
+        tempRl.question(`${Bun.color("#00ffff", "ansi-16m")}    Enter new version: `, resolve)
+    );
+    
+    tempRl.close();
+    
+    const packagePath = new URL('./package.json', import.meta.url);
+    const updatedPackage = { ...packageJSON, version: newVersion };
+    await Bun.write(packagePath, JSON.stringify(updatedPackage, null, 2));
+    
+    console.log(`${Bun.color("#00ff00", "ansi-16m")}Updated package.json version to ${Bun.color("#ff00ff", "ansi-16m")}${newVersion}`);
+    
+    process.stdout.write('\x1b[0m');
+}
 
 process.on('exit', () => {
     process.stdout.write('\x1b[0m');
