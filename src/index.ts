@@ -50,7 +50,7 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
      * @throws {SQLError} If database cannot be opened or initialized
      */
     constructor(
-        dbName: `${string}.SQLite` | ":memory:",
+        dbName: ":memory:" | (string & {}),
         tableNames?: TableNames<Schema>[],
         opts?: DbOptions
     ) {
