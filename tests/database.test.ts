@@ -27,7 +27,7 @@ describe("SQLError", () => {
 });
 
 describe("BunLiteDB", () => {
-    let db: BunLiteDB<keyof TestSchema, TestSchema>;
+    let db: BunLiteDB<TestSchema>;
 
     beforeEach(() => {
         db = new BunLiteDB(":memory:", ["Users", "Posts"]);
@@ -40,6 +40,24 @@ describe("BunLiteDB", () => {
     test("database initialization", () => {
         expect(db).toBeDefined();
         expect(db.database).toBeDefined();
+    });
+
+    test("getExistingTableNames returns correct table names", () => {
+        db.createTable("Users", [
+            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            { name: "name", type: "TEXT NOT NULL" }
+        ]);
+
+        db.createTable("Posts", [
+            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            { name: "title", type: "TEXT NOT NULL" }
+        ]);
+
+        // @ts-ignore - accessing private method for testing
+        const tableNames = db.getExistingTableNames();
+        expect(tableNames).toContain("Users");
+        expect(tableNames).toContain("Posts");
+        expect(tableNames.length).toBe(2);
     });
 
     test("create table", () => {
@@ -68,8 +86,8 @@ describe("BunLiteDB", () => {
         const records = db.fetchAllRecords("Users");
         expect(records.length).toBe(1);
         const firstRecord = records[0];
-        expect(firstRecord?.name).toBe("Test User");
-        expect(firstRecord?.email).toBe("test@example.com");
+        expect(firstRecord.name).toBe("Test User");
+        expect(firstRecord.email).toBe("test@example.com");
     });
 
     test("upsert records", () => {
@@ -92,7 +110,7 @@ describe("BunLiteDB", () => {
         const records = db.fetchAllRecords("Users");
         expect(records.length).toBe(1);
         const firstRecord = records[0];
-        expect(firstRecord?.name).toBe("Updated User");
+        expect(firstRecord.name).toBe("Updated User");
     });
 
     test("fetch records with condition", () => {
