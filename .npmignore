@@ -6,3 +6,4 @@ tests/
 tsconfig.json
 .gitignore
 publish.ts
+foo.ts

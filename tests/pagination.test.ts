@@ -10,7 +10,7 @@ type TestSchema = {
 };
 
 describe("BunLiteDB Pagination", () => {
-    let db: BunLiteDB<keyof TestSchema, TestSchema>;
+    let db: BunLiteDB<TestSchema>;
 
     function createTestUsers(count: number): {
         name: string;

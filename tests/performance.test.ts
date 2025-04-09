@@ -37,7 +37,7 @@ function drawSpeedBar(recordsPerSec: number, color: string = "\x1b[32m", maxSpee
 }
 
 describe("Performance Tests", () => {
-    const db = new BunLiteDB<keyof TestSchema, TestSchema>(":memory:", ["PerformanceTest"]);
+    const db = new BunLiteDB<TestSchema>(":memory:", ["PerformanceTest"]);
 
     test("Bulk Insert Performance", async () => {
         const recordCounts = [1000, 10000, 100000];

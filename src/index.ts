@@ -30,53 +30,50 @@ type OutputSchema<Columns> = {
     notnull: 0 | 1;
     dflt_value: any;
     pk: 0 | 1;
-}[]
+}[];
 
-export default class BunLiteDB<
-    TableNames extends string,
-    Schema extends Record<TableNames, Record<string, unknown>>
-> {
+type TableNames<T> = keyof T & string;
 
+type DbOptions = ConstructorParameters<typeof Database>[1] | {
+    /**
+     * Enables SQLite's WAL mode. Enabled by default.
+     *
+     * @type {boolean}
+     * @default true
+     */
+    writeAheadLog: boolean;
+}
+
+export default class BunLiteDB<Schema extends Record<string, Record<string, unknown>>> {
     private db: Database;
-    private tableNames: Set<TableNames>;
+    private tableNames: Set<TableNames<Schema>>;
 
     /**
      * Creates a new SQLite database connection
      * @param dbName Path to SQLite database file or ":memory:" for in-memory database
-     * @param tableNames Array of table names that will be used with this connection
+     * @param tableNames Optional array of table names that will be used with this connection. If not provided, existing tables will be used.
+     * @param opts Database connection options
      * @throws {SQLError} If database cannot be opened or initialized
-     * 
-     * @example
-     * type DatabaseSchema {
-     *  UserTable: {
-     *    userID: string,
-     *    archived: boolean;
-     *  },
-     *  UserSessions: {
-     *    userID: string,
-     *    sessionCounter: number, 
-     *  }
-     * }
-     * 
-     * const database = new BunLiteDB<keyof DatabaseSchema, DatabaseSchema>(":memory:");
      */
     constructor(
-        dbName: `${string}.SQLite` | ":memory:",
-        tableNames: TableNames[],
-        opts?: ConstructorParameters<typeof Database>[1]
+        dbName: ":memory:" | (string & {}),
+        tableNames?: TableNames<Schema>[],
+        opts?: DbOptions
     ) {
-
         const newOpts = typeof opts === "number" ? opts : {
-            ...opts,
             create: true,
             strict: true,
-        }
+            writeAheadLog: true,
+            ...opts,
+        };
 
-        this.tableNames = new Set(tableNames);
+        const useWal: boolean = typeof newOpts !== "number" ? newOpts.writeAheadLog ?? true : false;
+
         try {
             this.db = new Database(dbName, newOpts);
-            this.db.exec("PRAGMA journal_mode = WAL;");
-            this.setForeignKeyMode("OFF");
+            if (useWal) {
+                this.db.exec("PRAGMA journal_mode = WAL;");
+            }
         } catch (error: any) {
             if (error.code === "SQLITE_CANTOPEN") {
                 throw new SQLError(`Unable to access database: "${dbName}". ${error}`);
@@ -87,10 +84,25 @@ export default class BunLiteDB<
         if (this.db === undefined) {
             throw new SQLError('Failed to construct database.');
         }
+
+        this.tableNames = tableNames 
+            ? new Set(tableNames)
+            : new Set(this.getExistingTableNames() as TableNames<Schema>[]);
     }
 
     /**
-     * Sets the SQLite foreign key enforcement mode
+     * Gets all existing table names from the database
+     * @private
+     * @returns Array of table names
+     */
+    private getExistingTableNames(): TableNames<Schema>[] {
+        const query = `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`;
+        const results = this.db.query(query).all() as { name: string }[];
+        return results.map(row => row.name);
+    }
+
+    /**
+     * Sets the SQLite foreign key enforcement mode.
      * @param mode "ON" to enable foreign key constraints, "OFF" to disable
      */
     public setForeignKeyMode(mode: "ON" | "OFF"): void {
@@ -113,9 +125,9 @@ export default class BunLiteDB<
      * @param tableName Name of the table to get schema for
      * @returns Array of column information from PRAGMA table_info
      */
-    public getSchema<TableName extends TableNames>(tableName: TableNames): OutputSchema<Schema[TableName]> {
+    public getSchema<T extends TableNames<Schema>>(tableName: T): OutputSchema<Schema[T]> {
         this.validateTableName(tableName);
-        return this.db.query(`PRAGMA table_info(${tableName})`).all() as unknown as OutputSchema<Schema[TableName]>;
+        return this.db.query(`PRAGMA table_info(${tableName})`).all() as unknown as OutputSchema<Schema[T]>;
     }
 
     /**
@@ -123,9 +135,9 @@ export default class BunLiteDB<
      * @param tableName Name of the table to validate
      * @throws {Error} If table name is not in the allowed set
      */
-    public validateTableName(tableName: string): asserts tableName is TableNames {
+    public validateTableName(tableName: string): asserts tableName is TableNames<Schema> {
         this.validateSQLiteIdentifier(tableName, 'table');
-        if (!this.tableNames.has(tableName as TableNames)) {
+        if (!this.tableNames.has(tableName as TableNames<Schema>)) {
             throw new Error(`Invalid table name: ${tableName}`);
         }
     }
@@ -150,9 +162,9 @@ export default class BunLiteDB<
      * @param columns Array of column definitions with types and constraints
      * @throws {SQLError} If table creation fails
      */
-    createTable<TableName extends TableNames>(
-        tableName: TableName,
-        columns: TableSchema<Schema[TableName]>
+    createTable<T extends TableNames<Schema>>(
+        tableName: T,
+        columns: TableSchema<Schema[T]>
     ): void {
         this.validateTableName(tableName);
         const foreignKeys: string[] = [];
@@ -182,9 +194,9 @@ export default class BunLiteDB<
      * @param values Object containing column-value pairs to insert
      * @throws {Error} If table name is invalid or insert fails
      */
-    insertRecord<TableName extends TableNames>(
-        tableName: TableName,
-        values: Partial<Schema[TableName]>
+    insertRecord<T extends TableNames<Schema>>(
+        tableName: T,
+        values: Partial<Schema[T]>
     ): void {
         this.validateTableName(tableName);
         const columns: string = Object.keys(values).join(", ");
@@ -204,10 +216,10 @@ export default class BunLiteDB<
      * @param conflictColumn Column to check for conflicts
      * @throws {Error} If table name is invalid or upsert fails
      */
-    upsertRecord<TableName extends TableNames>(
-        tableName: TableName,
-        values: Partial<Schema[TableName]>,
-        conflictColumn: keyof Schema[TableName] & string,
+    upsertRecord<T extends TableNames<Schema>>(
+        tableName: T,
+        values: Partial<Schema[T]>,
+        conflictColumn: keyof Schema[T] & string,
     ): void {
         this.validateTableName(tableName);
         const columns: string = Object.keys(values).join(", ");
@@ -235,16 +247,16 @@ export default class BunLiteDB<
      * @returns Array of records matching the table's schema
      * @throws {Error} If table name is invalid
      */
-    fetchAllRecords<TableName extends TableNames>(tableName: TableName, limit?: number): Schema[TableName][] {
+    fetchAllRecords<T extends TableNames<Schema>>(tableName: T, limit?: number): Schema[T][] {
         this.validateTableName(tableName);
         let fetchQuery: string = `SELECT * FROM ${tableName}`;
         if (limit) {
             fetchQuery += ` LIMIT ?`;
             const results = this.db.query(fetchQuery).all(limit);
-            return results as Schema[TableName][];
+            return results as Schema[T][];
         } else {
             const results = this.db.query(fetchQuery).all();
-            return results as Schema[TableName][];
+            return results as Schema[T][];
         }
     }
 
@@ -256,15 +268,15 @@ export default class BunLiteDB<
      * @returns Array of records matching the condition
      * @throws {Error} If table name is invalid
      */
-    fetchRecordsWithCondition<TableName extends TableNames>(
-        tableName: TableName,
+    fetchRecordsWithCondition<T extends TableNames<Schema>>(
+        tableName: T,
         condition: string,
         values: SQLQueryBindings[]
-    ): Schema[TableName][] {
+    ): Schema[T][] {
         this.validateTableName(tableName);
         const fetchQuery: string = `SELECT * FROM ${tableName} WHERE ${condition}`;
         const results: unknown[] = this.db.query(fetchQuery).all(...values);
-        return results as Schema[TableName][];
+        return results as Schema[T][];
     }
 
     /**
@@ -275,18 +287,18 @@ export default class BunLiteDB<
      * @returns Array of records for the requested page
      * @throws {Error} If table name is invalid or pagination parameters are invalid
      */
-    fetchRecordsWithPagination<TableName extends TableNames>(
-        tableName: TableName,
+    fetchRecordsWithPagination<T extends TableNames<Schema>>(
+        tableName: T,
         page: number,
         pageSize: number
-    ): Schema[TableName][] {
+    ): Schema[T][] {
         this.validateTableName(tableName);
         if (page < 1) throw new Error('Page number must be greater than 0');
         if (pageSize < 1) throw new Error('Page size must be greater than 0');
 
         const offset = (page - 1) * pageSize;
         const query = `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`;
-        return this.db.query(query).all(pageSize, offset) as Schema[TableName][];
+        return this.db.query(query).all(pageSize, offset) as Schema[T][];
     }
 
     /**
@@ -296,16 +308,16 @@ export default class BunLiteDB<
      * @yields Records from the table one at a time
      * @throws {Error} If table name is invalid
      */
-    async *recordsIterator<TableName extends TableNames>(
-        tableName: TableName,
+    async *recordsIterator<T extends TableNames<Schema>>(
+        tableName: T,
         batchSize: number = 1000
-    ): AsyncGenerator<Schema[TableName], void, unknown> {
+    ): AsyncGenerator<Schema[T], void, unknown> {
         this.validateTableName(tableName);
         let offset = 0;
         
         while (true) {
             const query = `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`;
-            const batch = this.db.query(query).all(batchSize, offset) as Schema[TableName][];
+            const batch = this.db.query(query).all(batchSize, offset) as Schema[T][];
             
             if (batch.length === 0) break;
             
@@ -323,7 +335,7 @@ export default class BunLiteDB<
      * @param tableName Name of the table to delete
      * @throws {SQLError} If table deletion fails
      */
-    deleteTable(tableName: TableNames): void {
+    deleteTable(tableName: TableNames<Schema>): void {
         this.validateTableName(tableName);
         try {
             const schemaQuery: string = `SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`;

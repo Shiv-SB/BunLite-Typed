@@ -50,10 +50,14 @@ type DatabaseSchema = {
 };
 
 // Initialize database with type-safe table names
-const db = new BunLiteDB<keyof DatabaseSchema, DatabaseSchema>(
+const db = new BunLiteDB<DatabaseSchema>(
   "mydb.SQLite",
   ["Users", "Posts"]
 );
+
+// Connect to an already existing database
+const db = new BunLiteDB("existingDB.db");
+// If no schema is provided, return types will fallback to unknown.
 
 // Create tables with type checking on column names and types
 db.createTable("Users", [
@@ -108,7 +112,7 @@ type Schema = {
   }
 };
 
-const db = new BunLiteDB<keyof Schema, Schema>(":memory:", ["Users"]);
+const db = new BunLiteDB<Schema>(":memory:", ["Users"]);
 
 // Fetch page 1 with 10 records per page
 const page1 = db.fetchRecordsWithPagination("Users", 1, 10);
