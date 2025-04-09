@@ -14,7 +14,7 @@ type ConcurrentTestSchema = {
 };
 
 describe("Concurrent Operations", () => {
-    let db: BunLiteDB<keyof ConcurrentTestSchema, ConcurrentTestSchema>;
+    let db: BunLiteDB<ConcurrentTestSchema>;
 
     beforeEach(() => {
         db = new BunLiteDB(":memory:", ["Counter", "Log"]);

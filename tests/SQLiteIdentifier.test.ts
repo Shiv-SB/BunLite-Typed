@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import BunLiteDB from "../src/index";
 
 describe("SQLite Identifier Validation", () => {
-    const db = new BunLiteDB<"test", { test: {} }>(":memory:", ["test"]);
+    const db = new BunLiteDB<{ test: {} }>(":memory:", ["test"]);
 
     // Test valid identifiers
     const validNames = [
