@@ -72,7 +72,6 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
         try {
             this.db = new Database(dbName, newOpts);
             if (useWal) {
-                console.log("foo!");
                 this.db.exec("PRAGMA journal_mode = WAL;");
             }
         } catch (error: any) {
