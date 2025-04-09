@@ -88,7 +88,7 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
      * @private
      * @returns Array of table names
      */
-    private getExistingTableNames(): string[] {
+    private getExistingTableNames(): TableNames<Schema>[] {
         const query = `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`;
         const results = this.db.query(query).all() as { name: string }[];
         return results.map(row => row.name);
