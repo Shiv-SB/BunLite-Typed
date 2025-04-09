@@ -34,7 +34,13 @@ type OutputSchema<Columns> = {
 
 type TableNames<T> = keyof T & string;
 
-type DbOptions = ConstructorParameters<typeof Database>[1] & {
+type DbOptions = ConstructorParameters<typeof Database>[1] | {
+    /**
+     * Enables SQLite's WAL mode. Enabled by default.
+     *
+     * @type {boolean}
+     * @default true
+     */
     writeAheadLog: boolean;
 }
 
@@ -57,14 +63,16 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
         const newOpts = typeof opts === "number" ? opts : {
             create: true,
             strict: true,
+            writeAheadLog: true,
             ...opts,
         };
 
-        const useWal: boolean = newOpts.writeAheadLog ?? true;
+        const useWal: boolean = typeof newOpts !== "number" ? newOpts.writeAheadLog ?? true : false;
 
         try {
             this.db = new Database(dbName, newOpts);
             if (useWal) {
+                console.log("foo!");
                 this.db.exec("PRAGMA journal_mode = WAL;");
             }
         } catch (error: any) {
