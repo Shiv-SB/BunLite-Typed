@@ -23,6 +23,19 @@ type TableSchema<T> = {
     };
 }[keyof T][];
 
+type ColumnConfig = {
+    type: DataTypes;
+    foreignKey?: string;
+};
+
+type TableConfig<T> = {
+    [K in keyof T]: ColumnConfig;
+};
+
+type SchemaConfig<T> = {
+    [TableName in keyof T]: TableConfig<T[TableName]>;
+};
+
 type OutputSchema<Columns> = {
     cid: number;
     name: keyof Columns;
@@ -47,17 +60,18 @@ type DbOptions = ConstructorParameters<typeof Database>[1] | {
 export default class BunLiteDB<Schema extends Record<string, Record<string, unknown>>> {
     private db: Database;
     private tableNames: Set<TableNames<Schema>>;
+    private schemaConfig?: SchemaConfig<Schema>;
 
     /**
      * Creates a new SQLite database connection
      * @param dbName Path to SQLite database file or ":memory:" for in-memory database
-     * @param tableNames Optional array of table names that will be used with this connection. If not provided, existing tables will be used.
+     * @param schemaConfig Optional schema configuration object for table definitions
      * @param opts Database connection options
      * @throws {SQLError} If database cannot be opened or initialized
      */
     constructor(
         dbName: ":memory:" | (string & {}),
-        tableNames?: TableNames<Schema>[],
+        schemaConfig?: SchemaConfig<Schema>,
         opts?: DbOptions
     ) {
         const newOpts = typeof opts === "number" ? opts : {
@@ -85,9 +99,28 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
             throw new SQLError('Failed to construct database.');
         }
 
-        this.tableNames = tableNames 
-            ? new Set(tableNames)
-            : new Set(this.getExistingTableNames() as TableNames<Schema>[]);
+        this.schemaConfig = schemaConfig;
+        this.tableNames = new Set(this.getExistingTableNames() as TableNames<Schema>[]);
+    }
+
+    /**
+     * Creates tables from the schema configuration
+     * @throws {SQLError} If table creation fails
+     */
+    public createTablesFromSchema(): void {
+        if (!this.schemaConfig) {
+            throw new SQLError('No schema configuration provided');
+        }
+
+        for (const [tableName, config] of Object.entries(this.schemaConfig)) {
+            const columns = Object.entries(config).map(([name, colConfig]) => ({
+                name,
+                type: (colConfig as ColumnConfig).type,
+                foreignKey: (colConfig as ColumnConfig).foreignKey
+            }));
+            this.createTable(tableName as TableNames<Schema>, columns);
+            this.tableNames.add(tableName as TableNames<Schema>);
+        }
     }
 
     /**
@@ -133,12 +166,19 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
     /**
      * Validates if a table name exists in the allowed set
      * @param tableName Name of the table to validate
+     * @param skipExistenceCheck Whether to skip existence check during table creation
      * @throws {Error} If table name is not in the allowed set
      */
-    public validateTableName(tableName: string): asserts tableName is TableNames<Schema> {
+    public validateTableName(tableName: string, skipExistenceCheck: boolean = false): asserts tableName is TableNames<Schema> {
         this.validateSQLiteIdentifier(tableName, 'table');
-        if (!this.tableNames.has(tableName as TableNames<Schema>)) {
-            throw new Error(`Invalid table name: ${tableName}`);
+        if (!skipExistenceCheck && !this.tableNames.has(tableName as TableNames<Schema>)) {
+            const exists = this.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
+                .get(tableName);
+            if (exists) {
+                this.tableNames.add(tableName as TableNames<Schema>);
+            } else {
+                throw new Error(`Table does not exist: ${tableName}`);
+            }
         }
     }
 
@@ -162,11 +202,11 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
      * @param columns Array of column definitions with types and constraints
      * @throws {SQLError} If table creation fails
      */
-    createTable<T extends TableNames<Schema>>(
+    public createTable<T extends TableNames<Schema>>(
         tableName: T,
         columns: TableSchema<Schema[T]>
     ): void {
-        this.validateTableName(tableName);
+        this.validateTableName(tableName, true);
         const foreignKeys: string[] = [];
         const columnsDefinition: string = columns
             .map((col) => {
@@ -227,12 +267,10 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
             .map(() => "?")
             .join(", ");
 
-        // Build the update clause for the fields (to update them if a conflict happens)
         const updateClause: string = Object.keys(values)
             .map((col) => `${col} = excluded.${col}`)
             .join(", ");
 
-        // On conflict, update the values for the conflicting column
         const upsertQuery: string = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})
             ON CONFLICT(${conflictColumn.toString()}) DO UPDATE SET ${updateClause}`;
 
