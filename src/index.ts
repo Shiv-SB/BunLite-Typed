@@ -10,8 +10,8 @@ export class SQLError extends Error {
 
 type SQLiteTypes = "TEXT" | "INTEGER" | "DECIMAL" | "BLOB" | "NULL";
 type TableConstraints = "PRIMARY KEY" | "UNIQUE" | "NOT NULL" | "CHECK" | "FOREIGN KEY" | "AUTOINCREMENT";
-export type DataTypes = SQLiteTypes | 
-    `${SQLiteTypes} ${TableConstraints}` | 
+export type DataTypes = SQLiteTypes |
+    `${SQLiteTypes} ${TableConstraints}` |
     `${SQLiteTypes} ${TableConstraints} ${TableConstraints}` |
     `${SQLiteTypes} ${TableConstraints} ${TableConstraints} ${TableConstraints}` |
     `${SQLiteTypes} ${TableConstraints} ${TableConstraints} ${TableConstraints} ${TableConstraints}`;
@@ -393,17 +393,17 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
     ): AsyncGenerator<Schema[T], void, unknown> {
         this.validateTableName(tableName);
         let offset = 0;
-        
+
         while (true) {
             const query = `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`;
             const batch = this.db.query(query).all(batchSize, offset) as Schema[T][];
-            
+
             if (batch.length === 0) break;
-            
+
             for (const record of batch) {
                 yield record;
             }
-            
+
             if (batch.length < batchSize) break;
             offset += batchSize;
         }
