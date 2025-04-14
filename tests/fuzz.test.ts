@@ -18,7 +18,17 @@ describe("BunLiteDB Fuzz Tests", () => {
 
     beforeEach(() => {
         testTableNames = Array.from({ length: 5 }, generateValidTableName);
-        db = new BunLiteDB(":memory:", testTableNames);
+        const schemaConfig = Object.fromEntries(
+            testTableNames.map(name => [
+                name,
+                {
+                    id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+                    value: { type: "TEXT NOT NULL" as DataTypes }
+                }
+            ])
+        );
+        db = new BunLiteDB(":memory:", schemaConfig);
+        db.createTablesFromSchema();
     });
 
     afterEach(() => {
@@ -27,18 +37,24 @@ describe("BunLiteDB Fuzz Tests", () => {
 
     test("fuzz test table creation with random column names", () => {
         const tableName = testTableNames[0];
-        const columnCount = Math.floor(Math.random() * 10) + 1; // 1-10 columns
+        const columnCount = Math.floor(Math.random() * 10) + 1;
         
-        const columns = Array.from({ length: columnCount }, () => ({
-            name: generateValidTableName(),
-            type: "TEXT NOT NULL" as DataTypes
-        }));
+        const newSchemaConfig = {
+            [tableName]: Object.fromEntries([
+                ["id", { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes }],
+                ...Array.from({ length: columnCount }, () => {
+                    const colName = generateValidTableName();
+                    return [colName, { type: "TEXT NOT NULL" as DataTypes }];
+                })
+            ])
+        };
 
-        expect(() => {
-            db.createTable(tableName, columns);
-            const schema = db.getSchema(tableName);
-            expect(schema.length).toBe(columnCount);
-        }).not.toThrow();
+        const newDb = new BunLiteDB(":memory:", newSchemaConfig);
+        newDb.createTablesFromSchema();
+        
+        const schema = newDb.getSchema(tableName);
+        expect(schema.length).toBe(columnCount + 1); // +1 for id column
+        newDb.closeConnection();
     });
 
     test("fuzz test table names validation", () => {
@@ -62,47 +78,61 @@ describe("BunLiteDB Fuzz Tests", () => {
 
     test("fuzz test record insertion with random data", () => {
         const tableName = testTableNames[0];
-        const columns = [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-            { name: generateValidTableName(), type: "TEXT" as DataTypes },
-            { name: generateValidTableName(), type: "INTEGER" as DataTypes }
-        ];
+        const colName1 = generateValidTableName();
+        const colName2 = generateValidTableName();
+        
+        const newSchemaConfig = {
+            [tableName]: {
+                id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+                [colName1]: { type: "TEXT" as DataTypes },
+                [colName2]: { type: "INTEGER" as DataTypes }
+            }
+        };
 
-        db.createTable(tableName, columns);
+        const newDb = new BunLiteDB(":memory:", newSchemaConfig);
+        newDb.createTablesFromSchema();
 
         const recordCount = Math.floor(Math.random() * 50) + 1;
         
         for (let i = 0; i < recordCount; i++) {
             const record = {
-                [columns[1].name]: generateRandomString(10),
-                [columns[2].name]: Math.floor(Math.random() * 1000)
+                [colName1]: generateRandomString(10),
+                [colName2]: Math.floor(Math.random() * 1000)
             };
 
             expect(() => {
-                db.insertRecord(tableName, record);
+                newDb.insertRecord(tableName, record);
             }).not.toThrow();
         }
 
-        const records = db.fetchAllRecords(tableName);
+        const records = newDb.fetchAllRecords(tableName);
         expect(records.length).toBe(recordCount);
+        newDb.closeConnection();
     });
 
     test("fuzz test multiple table operations", () => {
         for (const tableName of testTableNames) {
-            const columns = [
-                { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-                { name: generateValidTableName(), type: "TEXT" as DataTypes}
-            ];
+            const colName = generateValidTableName();
+            const newSchemaConfig = {
+                [tableName]: {
+                    id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+                    [colName]: { type: "TEXT" as DataTypes }
+                }
+            };
+
+            const newDb = new BunLiteDB(":memory:", newSchemaConfig);
+            newDb.createTablesFromSchema();
 
             expect(() => {
-                db.createTable(tableName, columns);
-                db.insertRecord(tableName, {
-                    [columns[1].name]: generateRandomString(10)
+                newDb.insertRecord(tableName, {
+                    [colName]: generateRandomString(10)
                 });
-                const records = db.fetchAllRecords(tableName);
+                const records = newDb.fetchAllRecords(tableName);
                 expect(records.length).toBe(1);
-                db.deleteTable(tableName);
+                newDb.deleteTable(tableName);
             }).not.toThrow();
+
+            newDb.closeConnection();
         }
     });
 });

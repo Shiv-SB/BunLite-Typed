@@ -1,4 +1,5 @@
 import { Database, type SQLQueryBindings } from 'bun:sqlite';
+import reservedKeywords from './keywords';
 
 export class SQLError extends Error {
     constructor(message: string) {
@@ -18,7 +19,7 @@ export type DataTypes = SQLiteTypes |
 type TableSchema<T> = {
     [K in keyof T]: {
         name: K;
-        type: DataTypes;
+        type: DataTypes & string;
         foreignKey?: string;
     };
 }[keyof T][];
@@ -56,6 +57,43 @@ type DbOptions = ConstructorParameters<typeof Database>[1] | {
      */
     writeAheadLog: boolean;
 }
+
+/**
+ * Helper type to create a schema configuration with proper typing
+ * @example
+ * type UserSchema = {
+ *   id: number;
+ *   name: string;
+ *   email: string;
+ * };
+ * 
+ * type PostSchema = {
+ *   id: number;
+ *   title: string;
+ *   userId: number;
+ * };
+ * 
+ * type MyDatabase = DefineSchema<{
+ *   users: UserSchema;
+ *   posts: PostSchema;
+ * }>;
+ * 
+ * const schemaConfig: SchemaConfig<MyDatabase> = {
+ *   users: {
+ *     id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+ *     name: { type: "TEXT NOT NULL" },
+ *     email: { type: "TEXT UNIQUE" }
+ *   },
+ *   posts: {
+ *     id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+ *     title: { type: "TEXT NOT NULL" },
+ *     userId: { type: "INTEGER", foreignKey: "REFERENCES users(id)" }
+ *   }
+ * };
+ * 
+ * const db = new BunLiteDB<MyDatabase>(":memory:", schemaConfig);
+ */
+export type DefineSchema<T extends Record<string, Record<string, unknown>>> = T;
 
 export default class BunLiteDB<Schema extends Record<string, Record<string, unknown>>> {
     private db: Database;
@@ -189,6 +227,9 @@ export default class BunLiteDB<Schema extends Record<string, Record<string, unkn
      * @throws {SQLError} If the identifier is invalid
      */
     private validateSQLiteIdentifier(name: string, type: 'table' | 'column'): void {
+        if (reservedKeywords.has(name)) {
+            throw new SQLError(`Invalid ${type} name "${name}", "${name}" is a reserved keyword`);
+        }
         if (!name.match(/^[a-zA-Z_][a-zA-Z0-9_$]*$/)) {
             throw new SQLError(
                 `Invalid ${type} name "${name}". ${type} names must start with a letter or underscore and contain only letters, numbers, underscores, or $.`

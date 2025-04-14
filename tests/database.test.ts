@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB, { SQLError } from '../src/index';
+import BunLiteDB, { SQLError, DataTypes } from '../src/index';
 
 type TestSchema = {
     Users: {
@@ -13,6 +13,23 @@ type TestSchema = {
         title: string;
         content: string;
     };
+};
+
+const schemaConfig = {
+    Users: {
+        id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+        name: { type: "TEXT NOT NULL" as DataTypes },
+        email: { type: "TEXT UNIQUE" as DataTypes }
+    },
+    Posts: {
+        id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+        userId: { 
+            type: "INTEGER NOT NULL" as DataTypes,
+            foreignKey: "REFERENCES Users(id) ON DELETE CASCADE"
+        },
+        title: { type: "TEXT NOT NULL" as DataTypes },
+        content: { type: "TEXT" as DataTypes }
+    }
 };
 
 describe("SQLError", () => {
@@ -30,7 +47,8 @@ describe("BunLiteDB", () => {
     let db: BunLiteDB<TestSchema>;
 
     beforeEach(() => {
-        db = new BunLiteDB(":memory:", ["Users", "Posts"]);
+        db = new BunLiteDB<TestSchema>(":memory:", schemaConfig);
+        db.createTablesFromSchema();
     });
 
     afterEach(() => {
@@ -43,16 +61,6 @@ describe("BunLiteDB", () => {
     });
 
     test("getExistingTableNames returns correct table names", () => {
-        db.createTable("Users", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "name", type: "TEXT NOT NULL" }
-        ]);
-
-        db.createTable("Posts", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "title", type: "TEXT NOT NULL" }
-        ]);
-
         // @ts-ignore - accessing private method for testing
         const tableNames = db.getExistingTableNames();
         expect(tableNames).toContain("Users");
@@ -61,23 +69,11 @@ describe("BunLiteDB", () => {
     });
 
     test("create table", () => {
-        db.createTable("Users", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "name", type: "TEXT NOT NULL" },
-            { name: "email", type: "TEXT UNIQUE" }
-        ]);
-
         const schema = db.getSchema("Users");
         expect(schema.length).toBe(3);
     });
 
     test("insert and fetch records", () => {
-        db.createTable("Users", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "name", type: "TEXT NOT NULL" },
-            { name: "email", type: "TEXT UNIQUE" }
-        ]);
-
         db.insertRecord("Users", {
             name: "Test User",
             email: "test@example.com"
@@ -91,12 +87,6 @@ describe("BunLiteDB", () => {
     });
 
     test("upsert records", () => {
-        db.createTable("Users", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "name", type: "TEXT NOT NULL" },
-            { name: "email", type: "TEXT UNIQUE" }
-        ]);
-
         db.upsertRecord("Users", {
             name: "Test User",
             email: "test@example.com"
@@ -114,12 +104,6 @@ describe("BunLiteDB", () => {
     });
 
     test("fetch records with condition", () => {
-        db.createTable("Users", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "name", type: "TEXT NOT NULL" },
-            { name: "email", type: "TEXT UNIQUE" }
-        ]);
-
         db.insertRecord("Users", { name: "User 1", email: "user1@example.com" });
         db.insertRecord("Users", { name: "User 2", email: "user2@example.com" });
 
@@ -135,11 +119,6 @@ describe("BunLiteDB", () => {
     });
 
     test("delete table", () => {
-        db.createTable("Users", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "name", type: "TEXT NOT NULL" }
-        ]);
-
         db.deleteTable("Users");
         
         expect(() => db.getSchema("Users")).toThrow();
@@ -147,18 +126,6 @@ describe("BunLiteDB", () => {
 
     test("foreign key constraints", () => {
         db.setForeignKeyMode("ON");
-        
-        db.createTable("Users", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "name", type: "TEXT NOT NULL" }
-        ]);
-
-        db.createTable("Posts", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "userId", type: "INTEGER", foreignKey: "REFERENCES Users(id)" },
-            { name: "title", type: "TEXT NOT NULL" },
-            { name: "content", type: "TEXT" }
-        ]);
 
         db.insertRecord("Users", { name: "Test User" });
         const users = db.fetchAllRecords("Users");

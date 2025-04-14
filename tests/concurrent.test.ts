@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB from '../src/index';
+import BunLiteDB, { DataTypes } from '../src/index';
 
 type ConcurrentTestSchema = {
     Counter: {
@@ -14,19 +14,23 @@ type ConcurrentTestSchema = {
 };
 
 describe("Concurrent Operations", () => {
+    const schemaConfig = {
+        Counter: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+            value: { type: "INTEGER NOT NULL" as DataTypes }
+        },
+        Log: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+            message: { type: "TEXT NOT NULL" as DataTypes },
+            timestamp: { type: "INTEGER NOT NULL" as DataTypes }
+        }
+    };
+
     let db: BunLiteDB<ConcurrentTestSchema>;
 
     beforeEach(() => {
-        db = new BunLiteDB(":memory:", ["Counter", "Log"]);
-        db.createTable("Counter", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "value", type: "INTEGER NOT NULL" }
-        ]);
-        db.createTable("Log", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "message", type: "TEXT NOT NULL" },
-            { name: "timestamp", type: "INTEGER NOT NULL" }
-        ]);
+        db = new BunLiteDB<ConcurrentTestSchema>(":memory:", schemaConfig);
+        db.createTablesFromSchema();
     });
 
     afterEach(() => {
@@ -89,22 +93,26 @@ describe("Concurrent Operations", () => {
 });
 
 describe("Multi-Instance Concurrent Operations", () => {
+    const schemaConfig = {
+        Counter: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+            value: { type: "INTEGER NOT NULL" as DataTypes }
+        },
+        Log: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+            message: { type: "TEXT NOT NULL" as DataTypes },
+            timestamp: { type: "INTEGER NOT NULL" as DataTypes }
+        }
+    };
+
     const dbPath = "test_concurrent.db";
     let instances: BunLiteDB<ConcurrentTestSchema>[] = [];
 
     beforeEach(() => {
         for (let i = 0; i < 3; i++) {
-            const db = new BunLiteDB<ConcurrentTestSchema>(dbPath, ["Counter", "Log"]);
+            const db = new BunLiteDB<ConcurrentTestSchema>(dbPath, schemaConfig);
             if (i === 0) {
-                db.createTable("Counter", [
-                    { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-                    { name: "value", type: "INTEGER NOT NULL" }
-                ]);
-                db.createTable("Log", [
-                    { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-                    { name: "message", type: "TEXT NOT NULL" },
-                    { name: "timestamp", type: "INTEGER NOT NULL" }
-                ]);
+                db.createTablesFromSchema();
             }
             instances.push(db);
         }
