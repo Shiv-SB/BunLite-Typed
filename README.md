@@ -47,7 +47,8 @@ const schemaConfig = {
     title: { type: "TEXT NOT NULL" },
     content: { type: "TEXT NOT NULL" }
   }
-} as const;
+} as const; // the type property gets converted from its SQL binding to TS types. https://bun.sh/docs/api/sqlite#datatypes
+// If youre providing the schema directly into the constructor, you dont need the 'as const'.
 
 // Initialize database with schema configuration - types are inferred automatically
 const db = new BunLiteDB("mydb.sqlite", schemaConfig);
