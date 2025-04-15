@@ -5,14 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [3.0.0] - 2024
 
 ### Breaking Changes
-- Changed database initialization to use schema configuration instead of table names array
+- Changed database initialization to use a schema object
 - Removed direct table names array constructor parameter
-- Updated type system to use `DefineSchema` helper type
 - Changed table creation to use schema-first approach
 
 ### Added
-- New `SchemaConfig` type for defining table schemas
-- Added `DefineSchema` helper type for better type inference
 - Added `createTablesFromSchema()` method for initializing all tables at once
 - Added runtime checks for reserved SQLite keywords
 
@@ -38,18 +35,9 @@ db.createTable("posts", [
 ])
 
 // New v3 initialization
-// Use DefineSchema helper to create the database schema
-type MyDatabase = DefineSchema<{
-  users: {
-    id: number;
-    name: string;
-  },
-  posts: {
-    id: number;
-    userId: number;
-  },
-}>;
+// No type arguments needed in constructor
 
+// Example 1:
 const schemaConfig = {
   users: {
     id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
@@ -59,7 +47,21 @@ const schemaConfig = {
     id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
     userId: { type: "INTEGER", foreignKey: "REFERENCES users(id)" }
   }
-};
-const db = new BunLiteDB<MyDatabase>("mydb.sqlite", schemaConfig);
+} as const;
+
+const db = new BunLiteDB("mydb.db", schemaConfig);
+
+// Auto create tables:
 db.createTablesFromSchema();
+
+// Example 2:
+
+// schemas provided directly in the constructor do not need type assertions
+const db = new BunLiteDB("mydb.db", {
+    users: {
+    id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+    name: { type: "TEXT NOT NULL" }
+  },
+});
+
 ```
