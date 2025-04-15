@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import BunLiteDB, { DataTypes } from "../src/index";
+import reservedKeywords from "../src/keywords";
 
 describe("SQLite Identifier Validation", () => {
     const schemaConfig = {
@@ -67,5 +68,15 @@ describe("SQLite Identifier Validation", () => {
             // @ts-expect-error - Testing invalid input
             db.validateSQLiteIdentifier(null, 'table')
         }).toThrow();
+    });
+
+    it("rejects all reserved keywords", () => {
+        // Test all actual SQLite reserved keywords
+        reservedKeywords.forEach(keyword => {
+            expect(() => {
+                // @ts-expect-error - Testing private method
+                db.validateSQLiteIdentifier(keyword, 'table')
+            }).toThrow();
+        });
     });
 });
