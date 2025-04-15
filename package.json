@@ -20,6 +20,9 @@
     "access": "public",
     "tag": "latest"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "Bun",
     "SQLite",

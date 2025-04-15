@@ -4,7 +4,7 @@
 [![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![npm version](https://img.shields.io/npm/v/bunlite-typed.svg?style=for-the-badge)](https://www.npmjs.com/package/bunlite-typed)
 
-## Overview [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/Shiv-SB/BunLite-Typed) [![Package Size](https://img.shields.io/badge/size-57%20KB-blue.svg)](https://www.npmjs.com/package/bunlite-typed)
+## Overview [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/Shiv-SB/BunLite-Typed) [![Package Size](https://img.shields.io/badge/size-43%20KB-blue.svg)](https://www.npmjs.com/package/bunlite-typed)
 
 A lightweight, type-safe ORM for Bun's SQLite, designed to provide additional type safety when working with Bun's built-in SQLite library.
 This is a simple and light wrapper that focuses on core functionality. While some features from popular ORMs (like migrations and runtime response validation) are not included, contributions are welcome via fork or PR if you need these features.

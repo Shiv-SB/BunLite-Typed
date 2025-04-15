@@ -7,3 +7,6 @@ tsconfig.json
 .gitignore
 publish.ts
 foo.ts
+*.tgz
+CHANGELOG.md
+bunfig.toml
