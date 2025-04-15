@@ -58,7 +58,7 @@ db.createTablesFromSchema();
 
 // Type-safe insertions
 db.insertRecord("users", {
-  name: "John Doe",
+  name: "John Doe", // 'TEXT' from the schema type prop gets inferred to string
   email: "john@example.com"
   // id is auto-generated
 });
