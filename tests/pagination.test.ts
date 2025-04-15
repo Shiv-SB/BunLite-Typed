@@ -12,11 +12,11 @@ type TestSchema = {
 describe("BunLiteDB Pagination", () => {
     const schemaConfig = {
         Users: {
-            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-            name: { type: "TEXT NOT NULL" as DataTypes },
-            email: { type: "TEXT UNIQUE" as DataTypes }
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            name: { type: "TEXT NOT NULL" },
+            email: { type: "TEXT UNIQUE" }
         }
-    };
+    } as const;
 
     let db: BunLiteDB<typeof schemaConfig>;
 

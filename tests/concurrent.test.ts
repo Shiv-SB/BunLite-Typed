@@ -1,18 +1,18 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB, { DataTypes, SchemaConfig } from '../src/index';
+import BunLiteDB from '../src/index';
 
 describe("Concurrent Operations", () => {
     const schemaConfig = {
         Counter: {
-            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-            value: { type: "INTEGER NOT NULL" as DataTypes }
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            value: { type: "INTEGER NOT NULL" }
         },
         Log: {
-            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-            message: { type: "TEXT NOT NULL" as DataTypes },
-            timestamp: { type: "INTEGER NOT NULL" as DataTypes }
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            message: { type: "TEXT NOT NULL" },
+            timestamp: { type: "INTEGER NOT NULL" }
         }
-    };
+    } as const;
 
     let db: BunLiteDB<typeof schemaConfig>;
 
@@ -29,7 +29,7 @@ describe("Concurrent Operations", () => {
         const insertCount = 100;
         const promises = Array(insertCount).fill(0).map((_, i) => {
             return new Promise<void>((resolve) => {
-                db.insertRecord("Counter", { value: i });
+                db.insertRecord("Counter", { value: 1});
                 resolve();
             });
         });
@@ -68,7 +68,7 @@ describe("Concurrent Operations", () => {
         
         const iteratorPromises = Array(iteratorCount).fill(0).map(async (_, index) => {
             for await (const record of db.recordsIterator("Counter", 100)) {
-                results[index] = [...results[index], record.value];
+                results[index] = [...results[index], Number(record.value)];
             }
         });
 
@@ -83,15 +83,15 @@ describe("Concurrent Operations", () => {
 describe("Multi-Instance Concurrent Operations", () => {
     const schemaConfig = {
         Counter: {
-            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-            value: { type: "INTEGER NOT NULL" as DataTypes }
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            value: { type: "INTEGER NOT NULL" }
         },
         Log: {
-            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-            message: { type: "TEXT NOT NULL" as DataTypes },
-            timestamp: { type: "INTEGER NOT NULL" as DataTypes }
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            message: { type: "TEXT NOT NULL" },
+            timestamp: { type: "INTEGER NOT NULL" }
         }
-    };
+    } as const;
 
     const dbPath = "test_concurrent.db";
     let instances: BunLiteDB<typeof schemaConfig>[] = [];

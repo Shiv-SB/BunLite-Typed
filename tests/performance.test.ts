@@ -1,4 +1,4 @@
-import BunLiteDB, { DataTypes } from "../src";
+import BunLiteDB, { DataTypes, SchemaConfig } from "../src";
 import { expect, test, describe } from "bun:test";
 
 type TestSchema = {
@@ -30,11 +30,11 @@ const drawSpeedBar = (recordsPerSec: number, color: string = "\x1b[32m", maxSpee
 describe("Performance Tests", () => {
     const schemaConfig = {
         PerformanceTest: {
-            id: { type: "INTEGER PRIMARY KEY" as DataTypes },
-            data: { type: "TEXT" as DataTypes },
-            timestamp: { type: "INTEGER" as DataTypes }
+            id: { type: "INTEGER PRIMARY KEY" },
+            data: { type: "TEXT" },
+            timestamp: { type: "INTEGER" }
         }
-    };
+    } as const;
 
     const db = new BunLiteDB(":memory:", schemaConfig);
 

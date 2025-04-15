@@ -304,7 +304,7 @@ export default class BunLiteDB<
             .join(', ');
         const insertQuery: string = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
 
-        const insertValues = Object.values(values);
+        const insertValues = Object.values(values) as SQLQueryBindings[][];
         this.db.run(insertQuery, ...insertValues);
     }
 

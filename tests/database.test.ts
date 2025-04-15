@@ -1,22 +1,22 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB, { SQLError, DataTypes } from '../src/index';
+import BunLiteDB, { SQLError } from '../src/index';
 
 const schemaConfig = {
     Users: {
-        id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-        name: { type: "TEXT NOT NULL" as DataTypes },
-        email: { type: "TEXT UNIQUE" as DataTypes }
+        id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+        name: { type: "TEXT NOT NULL" },
+        email: { type: "TEXT UNIQUE" }
     },
     Posts: {
-        id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
+        id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
         userId: { 
-            type: "INTEGER NOT NULL" as DataTypes,
+            type: "INTEGER NOT NULL",
             foreignKey: "REFERENCES Users(id) ON DELETE CASCADE"
         },
-        title: { type: "TEXT NOT NULL" as DataTypes },
-        content: { type: "TEXT" as DataTypes }
+        title: { type: "TEXT NOT NULL" },
+        content: { type: "TEXT" }
     }
-};
+} as const;
 
 describe("SQLError", () => {
     test("should create SQLError with correct name and message", () => {

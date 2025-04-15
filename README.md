@@ -32,27 +32,7 @@ bun add bunlite-typed
 ### Basic Example
 
 ```typescript
-import BunLiteDB, { type DefineSchema } from 'bunlite-typed';
-
-// Define your schema types
-type UserSchema = {
-  id: number;
-  name: string;
-  email: string;
-};
-
-type PostSchema = {
-  id: number;
-  userId: number;
-  title: string;
-  content: string;
-};
-
-// Use DefineSchema helper to create the database schema
-type MyDatabase = DefineSchema<{
-  users: UserSchema;
-  posts: PostSchema;
-}>;
+import BunLiteDB from 'bunlite-typed';
 
 // Create schema configuration
 const schemaConfig = {
@@ -67,10 +47,10 @@ const schemaConfig = {
     title: { type: "TEXT NOT NULL" },
     content: { type: "TEXT NOT NULL" }
   }
-};
+} as const;
 
-// Initialize database with schema configuration
-const db = new BunLiteDB<MyDatabase>("mydb.sqlite", schemaConfig);
+// Initialize database with schema configuration - types are inferred automatically
+const db = new BunLiteDB("mydb.sqlite", schemaConfig);
 
 // Create all tables from schema
 db.createTablesFromSchema();
@@ -84,7 +64,7 @@ db.insertRecord("users", {
 
 // Query with full type inference
 const users = db.fetchAllRecords("users");
-// users is typed as UserSchema[]
+// users is typed as { id: number, name: string, email: string }[]
 ```
 
 ### Advanced Usage

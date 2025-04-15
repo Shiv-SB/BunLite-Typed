@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB, { DataTypes } from '../src/index';
+import BunLiteDB, { DataTypes, SchemaConfig } from '../src/index';
 
 function generateRandomString(length: number): string {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$';
@@ -22,11 +22,11 @@ describe("BunLiteDB Fuzz Tests", () => {
             testTableNames.map(name => [
                 name,
                 {
-                    id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-                    value: { type: "TEXT NOT NULL" as DataTypes }
+                    id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+                    value: { type: "TEXT NOT NULL" }
                 }
             ])
-        );
+        ) as SchemaConfig;
         db = new BunLiteDB(":memory:", schemaConfig);
         db.createTablesFromSchema();
     });
@@ -83,22 +83,23 @@ describe("BunLiteDB Fuzz Tests", () => {
         
         const newSchemaConfig = {
             [tableName]: {
-                id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
-                [colName1]: { type: "TEXT" as DataTypes },
-                [colName2]: { type: "INTEGER" as DataTypes }
+                id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+                [colName1]: { type: "TEXT" },
+                [colName2]: { type: "INTEGER" }
             }
-        };
+        } as const;
 
-        const newDb = new BunLiteDB(":memory:", newSchemaConfig);
+        type Schema = typeof newSchemaConfig;
+        const newDb = new BunLiteDB<Schema>(":memory:", newSchemaConfig);
         newDb.createTablesFromSchema();
 
         const recordCount = Math.floor(Math.random() * 50) + 1;
         
         for (let i = 0; i < recordCount; i++) {
             const record = {
-                [colName1]: generateRandomString(10),
+                [colName1]: generateRandomString(10) as any, // to appease the type gods
                 [colName2]: Math.floor(Math.random() * 1000)
-            };
+            } as const;
 
             expect(() => {
                 newDb.insertRecord(tableName, record);
@@ -125,7 +126,7 @@ describe("BunLiteDB Fuzz Tests", () => {
 
             expect(() => {
                 newDb.insertRecord(tableName, {
-                    [colName]: generateRandomString(10)
+                    [colName]: generateRandomString(10) as any
                 });
                 const records = newDb.fetchAllRecords(tableName);
                 expect(records.length).toBe(1);
