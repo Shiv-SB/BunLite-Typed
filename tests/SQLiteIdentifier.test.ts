@@ -1,13 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import BunLiteDB, { DataTypes } from "../src/index";
 
-type TestSchema = {
-    test: {
-        id: number;
-        value: string;
-    }
-};
-
 describe("SQLite Identifier Validation", () => {
     const schemaConfig = {
         test: {
@@ -15,7 +8,7 @@ describe("SQLite Identifier Validation", () => {
             value: { type: "TEXT NOT NULL" as DataTypes }
         }
     };
-    const db = new BunLiteDB<TestSchema>(":memory:", schemaConfig);
+    const db = new BunLiteDB(":memory:", schemaConfig);
 
     const validNames: string[] = [
         "table1",

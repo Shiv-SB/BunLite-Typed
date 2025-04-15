@@ -1,20 +1,6 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
 import BunLiteDB, { SQLError, DataTypes } from '../src/index';
 
-type TestSchema = {
-    Users: {
-        id: number;
-        name: string;
-        email: string;
-    };
-    Posts: {
-        id: number;
-        userId: number;
-        title: string;
-        content: string;
-    };
-};
-
 const schemaConfig = {
     Users: {
         id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" as DataTypes },
@@ -44,10 +30,10 @@ describe("SQLError", () => {
 });
 
 describe("BunLiteDB", () => {
-    let db: BunLiteDB<TestSchema>;
+    let db: BunLiteDB<typeof schemaConfig>;
 
     beforeEach(() => {
-        db = new BunLiteDB<TestSchema>(":memory:", schemaConfig);
+        db = new BunLiteDB(":memory:", schemaConfig);
         db.createTablesFromSchema();
     });
 

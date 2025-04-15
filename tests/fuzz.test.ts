@@ -13,7 +13,7 @@ function generateValidTableName(): string {
 }
 
 describe("BunLiteDB Fuzz Tests", () => {
-    let db: BunLiteDB<Record<string, Record<string, unknown>>>;
+    let db: BunLiteDB<any>;
     let testTableNames: string[];
 
     beforeEach(() => {

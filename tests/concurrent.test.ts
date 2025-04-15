@@ -1,17 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import BunLiteDB, { DataTypes } from '../src/index';
-
-type ConcurrentTestSchema = {
-    Counter: {
-        id: number;
-        value: number;
-    };
-    Log: {
-        id: number;
-        message: string;
-        timestamp: number;
-    };
-};
+import BunLiteDB, { DataTypes, SchemaConfig } from '../src/index';
 
 describe("Concurrent Operations", () => {
     const schemaConfig = {
@@ -26,10 +14,10 @@ describe("Concurrent Operations", () => {
         }
     };
 
-    let db: BunLiteDB<ConcurrentTestSchema>;
+    let db: BunLiteDB<typeof schemaConfig>;
 
     beforeEach(() => {
-        db = new BunLiteDB<ConcurrentTestSchema>(":memory:", schemaConfig);
+        db = new BunLiteDB(":memory:", schemaConfig);
         db.createTablesFromSchema();
     });
 
@@ -106,11 +94,11 @@ describe("Multi-Instance Concurrent Operations", () => {
     };
 
     const dbPath = "test_concurrent.db";
-    let instances: BunLiteDB<ConcurrentTestSchema>[] = [];
+    let instances: BunLiteDB<typeof schemaConfig>[] = [];
 
     beforeEach(() => {
         for (let i = 0; i < 3; i++) {
-            const db = new BunLiteDB<ConcurrentTestSchema>(dbPath, schemaConfig);
+            const db = new BunLiteDB(dbPath, schemaConfig);
             if (i === 0) {
                 db.createTablesFromSchema();
             }

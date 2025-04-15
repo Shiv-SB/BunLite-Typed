@@ -18,7 +18,7 @@ describe("BunLiteDB Pagination", () => {
         }
     };
 
-    let db: BunLiteDB<TestSchema>;
+    let db: BunLiteDB<typeof schemaConfig>;
 
     const createTestUsers = (count: number): Array<Omit<TestSchema['Users'], 'id'>> => 
         Array.from({ length: count }, (_, i) => ({
@@ -27,7 +27,7 @@ describe("BunLiteDB Pagination", () => {
         }));
 
     beforeEach(() => {
-        db = new BunLiteDB<TestSchema>(":memory:", schemaConfig);
+        db = new BunLiteDB(":memory:", schemaConfig);
         db.createTablesFromSchema();
     });
 

@@ -36,7 +36,7 @@ describe("Performance Tests", () => {
         }
     };
 
-    const db = new BunLiteDB<TestSchema>(":memory:", schemaConfig);
+    const db = new BunLiteDB(":memory:", schemaConfig);
 
     test("Bulk Insert Performance", async () => {
         db.createTablesFromSchema();
