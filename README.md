@@ -34,91 +34,69 @@ bun add bunlite-typed
 ```typescript
 import BunLiteDB from 'bunlite-typed';
 
-// Define your database schema
-type DatabaseSchema = {
-  Users: {
-    id?: number;  // Optional because we'll let SQLite auto-generate it
-    name: string;
-    email: string;
-  };
-  Posts: {
-    id?: number;  // Optional because we'll let SQLite auto-generate it
-    userId: number;
-    title: string;
-    content: string;
-  };
-};
+// Create schema configuration
+const schemaConfig = {
+  users: {
+    id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+    name: { type: "TEXT NOT NULL" },
+    email: { type: "TEXT UNIQUE NOT NULL" }
+  },
+  posts: {
+    id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+    userId: { type: "INTEGER", foreignKey: "REFERENCES users(id)" },
+    title: { type: "TEXT NOT NULL" },
+    content: { type: "TEXT NOT NULL" }
+  }
+} as const; // the type property gets converted from its SQL binding to TS types. https://bun.sh/docs/api/sqlite#datatypes
+// If youre providing the schema directly into the constructor, you dont need the 'as const'.
 
-// Initialize database with type-safe table names
-const db = new BunLiteDB<DatabaseSchema>(
-  "mydb.SQLite",
-  ["Users", "Posts"]
-);
+// Initialize database with schema configuration - types are inferred automatically
+const db = new BunLiteDB("mydb.sqlite", schemaConfig);
 
-// Connect to an already existing database
-const db = new BunLiteDB("existingDB.db");
-// If no schema is provided, return types will fallback to unknown.
-
-// Create tables with type checking on column names and types
-db.createTable("Users", [
-  { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-  { name: "name", type: "TEXT NOT NULL" },
-  { name: "email", type: "TEXT UNIQUE NOT NULL" }
-]);
+// Create all tables from schema
+db.createTablesFromSchema();
 
 // Type-safe insertions
-db.insertRecord("Users", {
-  name: "John Doe",
+db.insertRecord("users", {
+  name: "John Doe", // 'TEXT' from the schema type prop gets inferred to string
   email: "john@example.com"
-  // id can be omitted since we marked it as optional in the type
-  // and configured it with AUTOINCREMENT in the schema
+  // id is auto-generated
 });
 
 // Query with full type inference
-const users: DatabaseSchema["Users"][] = db.fetchAllRecords("Users");
-// users is now fully typed with { id: number, name: string, email: string }[]
+const users = db.fetchAllRecords("users");
+// users is typed as { id: number, name: string, email: string }[]
 ```
 
 ### Advanced Usage
 
 ```typescript
-// Upsert with type checking on values and conflict column
+// Upsert with type checking
 db.upsertRecord(
-  "Users",
-  { id: 1, name: "John Updated", email: "john@example.com" },
-  "email" // Type safe conflic column
+  "users",
+  { name: "John Updated", email: "john@example.com" },
+  "email"  // Conflict column is type-checked
 );
 
 // Typed query results
-const user: DatabaseSchema["Users"][] = db.fetchRecordsWithCondition(
-  "Users",
+const user = db.fetchRecordsWithCondition(
+  "users",
   "email = ?",
   ["john@example.com"]
 );
 
-// Schema information with typed column names
-const schema = db.getSchema("Users");
-// Returns typed information about columns including names and types
+// Get schema information
+const schema = db.getSchema("users");
 ```
 
 #### Using Pagination
 
 ```typescript
-// Define your schema
-type Schema = {
-  Users: {
-    id: number;
-    name: string;
-  }
-};
-
-const db = new BunLiteDB<Schema>(":memory:", ["Users"]);
-
 // Fetch page 1 with 10 records per page
-const page1 = db.fetchRecordsWithPagination("Users", 1, 10);
+const page1 = db.fetchRecordsWithPagination("users", 1, 10);
 
 // Fetch page 2
-const page2 = db.fetchRecordsWithPagination("Users", 2, 10);
+const page2 = db.fetchRecordsWithPagination("users", 2, 10);
 ```
 
 #### Using Iterator
@@ -126,14 +104,14 @@ const page2 = db.fetchRecordsWithPagination("Users", 2, 10);
 ```typescript
 // Iterate through all records efficiently
 async function processUsers() {
-  for await (const user of db.recordsIterator("Users")) {
+  for await (const user of db.recordsIterator("users")) {
     console.log(user.name);
   }
 }
 
 // Or with a custom batch size
 async function processUsersWithBatch() {
-  for await (const user of db.recordsIterator("Users", 500)) {
+  for await (const user of db.recordsIterator("users", 500)) {
     console.log(user.name);
   }
 }
@@ -143,10 +121,15 @@ async function processUsersWithBatch() {
 
 ### Constructor
 ```typescript
-new BunLiteDB(dbName: string, tableNames: string[], opts?: DatabaseOptions)
+new BunLiteDB<Schema>(
+  dbName: ":memory:" | string,
+  schemaConfig?: SchemaConfig<Schema>,
+  opts?: DbOptions
+)
 ```
 
 ### Methods
+- `createTablesFromSchema()`: Create tables from schema configuration
 - `createTable(tableName, columns)`: Create a new table
 - `insertRecord(tableName, values)`: Insert a new record
 - `upsertRecord(tableName, values, conflictColumn)`: Insert or update a record
@@ -154,10 +137,11 @@ new BunLiteDB(dbName: string, tableNames: string[], opts?: DatabaseOptions)
 - `fetchRecordsWithCondition(tableName, condition, values)`: Query with conditions
 - `fetchRecordsWithPagination(tableName, page, pageSize)`: Get records with pagination
 - `recordsIterator(tableName, batchSize?)`: Async iterator for efficient record processing
-- `getSchema(tableName)`: Get table schema
+- `getSchema(tableName)`: Get table schema information
 - `deleteTable(tableName)`: Delete a table
 - `closeConnection()`: Close database connection
-- `setForeignKeyMode(mode)`: Set foreign key constraints
+- `setForeignKeyMode(mode)`: Set foreign key constraints mode
+- `database`: Get the underlying Bun SQLite Database instance
 
 ## Requirements
 - Bun >= 1.2.0

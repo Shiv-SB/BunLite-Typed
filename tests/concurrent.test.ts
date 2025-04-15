@@ -1,32 +1,24 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
 import BunLiteDB from '../src/index';
 
-type ConcurrentTestSchema = {
-    Counter: {
-        id: number;
-        value: number;
-    };
-    Log: {
-        id: number;
-        message: string;
-        timestamp: number;
-    };
-};
-
 describe("Concurrent Operations", () => {
-    let db: BunLiteDB<ConcurrentTestSchema>;
+    const schemaConfig = {
+        Counter: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            value: { type: "INTEGER NOT NULL" }
+        },
+        Log: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            message: { type: "TEXT NOT NULL" },
+            timestamp: { type: "INTEGER NOT NULL" }
+        }
+    } as const;
+
+    let db: BunLiteDB<typeof schemaConfig>;
 
     beforeEach(() => {
-        db = new BunLiteDB(":memory:", ["Counter", "Log"]);
-        db.createTable("Counter", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "value", type: "INTEGER NOT NULL" }
-        ]);
-        db.createTable("Log", [
-            { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-            { name: "message", type: "TEXT NOT NULL" },
-            { name: "timestamp", type: "INTEGER NOT NULL" }
-        ]);
+        db = new BunLiteDB(":memory:", schemaConfig);
+        db.createTablesFromSchema();
     });
 
     afterEach(() => {
@@ -37,7 +29,7 @@ describe("Concurrent Operations", () => {
         const insertCount = 100;
         const promises = Array(insertCount).fill(0).map((_, i) => {
             return new Promise<void>((resolve) => {
-                db.insertRecord("Counter", { value: i });
+                db.insertRecord("Counter", { value: 1});
                 resolve();
             });
         });
@@ -76,7 +68,7 @@ describe("Concurrent Operations", () => {
         
         const iteratorPromises = Array(iteratorCount).fill(0).map(async (_, index) => {
             for await (const record of db.recordsIterator("Counter", 100)) {
-                results[index] = [...results[index], record.value];
+                results[index] = [...results[index], Number(record.value)];
             }
         });
 
@@ -89,22 +81,26 @@ describe("Concurrent Operations", () => {
 });
 
 describe("Multi-Instance Concurrent Operations", () => {
+    const schemaConfig = {
+        Counter: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            value: { type: "INTEGER NOT NULL" }
+        },
+        Log: {
+            id: { type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+            message: { type: "TEXT NOT NULL" },
+            timestamp: { type: "INTEGER NOT NULL" }
+        }
+    } as const;
+
     const dbPath = "test_concurrent.db";
-    let instances: BunLiteDB<ConcurrentTestSchema>[] = [];
+    let instances: BunLiteDB<typeof schemaConfig>[] = [];
 
     beforeEach(() => {
         for (let i = 0; i < 3; i++) {
-            const db = new BunLiteDB<ConcurrentTestSchema>(dbPath, ["Counter", "Log"]);
+            const db = new BunLiteDB(dbPath, schemaConfig);
             if (i === 0) {
-                db.createTable("Counter", [
-                    { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-                    { name: "value", type: "INTEGER NOT NULL" }
-                ]);
-                db.createTable("Log", [
-                    { name: "id", type: "INTEGER PRIMARY KEY AUTOINCREMENT" },
-                    { name: "message", type: "TEXT NOT NULL" },
-                    { name: "timestamp", type: "INTEGER NOT NULL" }
-                ]);
+                db.createTablesFromSchema();
             }
             instances.push(db);
         }
