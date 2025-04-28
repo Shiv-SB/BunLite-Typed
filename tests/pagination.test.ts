@@ -63,6 +63,31 @@ describe("BunLiteDB Pagination", () => {
         }
     });
 
+    test("pagination with conditions", () => {
+        const users = createTestUsers(100);
+        users.forEach(user => db.insertRecord("Users", user));
+
+        // Test pagination with WHERE clause
+        const evenUsers = db.fetchRecordsWithPagination(
+            "Users", 
+            1, 
+            10, 
+            "id % 2 = 0",
+            []
+        );
+        expect(evenUsers.every(user => user.id! as number % 2 === 0)).toBe(true);
+
+        // Test pagination with parameterized query
+        const nameFilter = db.fetchRecordsWithPagination(
+            "Users",
+            1,
+            10,
+            "name LIKE ?",
+            ["User 1%"]
+        );
+        expect(nameFilter.every(user => user.name.startsWith("User 1"))).toBe(true);
+    });
+
     test("iterator with various batch sizes", async () => {
         const userCount = 500;
         const batchSizes = [1, 5, 100, 500, 1000];
@@ -80,5 +105,37 @@ describe("BunLiteDB Pagination", () => {
             }
             expect(count).toBe(userCount);
         }
+    });
+
+    test("iterator with conditions", async () => {
+        const userCount = 100;
+        const users = createTestUsers(userCount);
+        users.forEach(user => db.insertRecord("Users", user));
+
+        // Test iterator with WHERE clause
+        let evenCount = 0;
+        for await (const record of db.recordsIterator(
+            "Users",
+            10,
+            "id % 2 = 0",
+            []
+        )) {
+            expect(record.id! as number % 2).toBe(0);
+            evenCount++;
+        }
+        expect(evenCount).toBe(Math.floor(userCount / 2));
+
+        // Test iterator with parameterized query
+        let filteredCount = 0;
+        for await (const record of db.recordsIterator(
+            "Users",
+            10,
+            "name LIKE ?",
+            ["User 1%"]
+        )) {
+            expect(record.name.startsWith("User 1")).toBe(true);
+            filteredCount++;
+        }
+        expect(filteredCount).toBeGreaterThan(0);
     });
 });

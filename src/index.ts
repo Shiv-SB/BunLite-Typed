@@ -391,14 +391,17 @@ export default class BunLiteDB<
         tableName: Table,
         page: number,
         pageSize: number,
+        condition?: string,
+        values: SQLQueryBindings[] = []
     ): InferSchemaType<T>[Table][] {
         this.validateTableName(tableName);
         if (page < 1) throw new Error('Page number must be greater than 0');
         if (pageSize < 1) throw new Error('Page size must be greater than 0');
 
         const offset = (page - 1) * pageSize;
-        const query = `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`;
-        return this.db.query(query).all(pageSize, offset) as InferSchemaType<T>[Table][];
+        const whereClause = condition ? `WHERE ${condition}` : '';
+        const query = `SELECT * FROM ${tableName} ${whereClause} LIMIT ? OFFSET ?`;
+        return this.db.query(query).all(...values, pageSize, offset) as InferSchemaType<T>[Table][];
     }
 
     /**
@@ -411,13 +414,16 @@ export default class BunLiteDB<
     async *recordsIterator<Table extends TableNames<InferSchemaType<T>>>(
         tableName: Table,
         batchSize: number = 1000,
+        condition?: string,
+        values: SQLQueryBindings[] = []
     ): AsyncGenerator<InferSchemaType<T>[Table], void, unknown> {
         this.validateTableName(tableName);
         let offset = 0;
 
         while (true) {
-            const query = `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`;
-            const batch = this.db.query(query).all(batchSize, offset) as InferSchemaType<T>[Table][];
+            const whereClause = condition ? `WHERE ${condition}` : '';
+            const query = `SELECT * FROM ${tableName} ${whereClause} LIMIT ? OFFSET ?`;
+            const batch = this.db.query(query).all(...values, batchSize, offset) as InferSchemaType<T>[Table][];
 
             if (batch.length === 0) break;
 

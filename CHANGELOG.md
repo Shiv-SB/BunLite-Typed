@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [3.0.0] - 2024
+## [3.0.0] - 2025
 
 ### Breaking Changes
 - Changed database initialization to use a schema object

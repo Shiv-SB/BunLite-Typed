@@ -92,26 +92,51 @@ const schema = db.getSchema("users");
 #### Using Pagination
 
 ```typescript
-// Fetch page 1 with 10 records per page
+// Basic pagination
 const page1 = db.fetchRecordsWithPagination("users", 1, 10);
 
-// Fetch page 2
-const page2 = db.fetchRecordsWithPagination("users", 2, 10);
+// Pagination with conditions
+const activePage = db.fetchRecordsWithPagination(
+  "users", 
+  1, 
+  10,
+  "status = ?",
+  ["active"]
+);
+
+// Complex conditions
+const filtered = db.fetchRecordsWithPagination(
+  "users",
+  1,
+  10,
+  "created_at > ? AND role = ?",
+  [Date.now() - 86400000, "admin"] // Last 24 hours admins
+);
 ```
 
 #### Using Iterator
 
 ```typescript
-// Iterate through all records efficiently
+// Basic iteration
 async function processUsers() {
   for await (const user of db.recordsIterator("users")) {
     console.log(user.name);
   }
 }
 
-// Or with a custom batch size
-async function processUsersWithBatch() {
-  for await (const user of db.recordsIterator("users", 500)) {
+// Iteration with condition
+async function processActiveUsers() {
+  for await (const user of db.recordsIterator("users", 500, "status = ?", ["active"])) {
+    console.log(user.name);
+  }
+}
+
+// Complex filtering
+async function processRecentAdmins() {
+  const condition = "role = ? AND last_login > ?";
+  const values = ["admin", Date.now() - 86400000];
+  
+  for await (const user of db.recordsIterator("users", 100, condition, values)) {
     console.log(user.name);
   }
 }

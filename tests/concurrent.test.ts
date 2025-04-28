@@ -78,6 +78,91 @@ describe("Concurrent Operations", () => {
             expect(result.length).toBe(1000);
         });
     });
+
+    test("concurrent filtered reads", async () => {
+        const operations = 50;
+        const timestamp = Date.now();
+
+        // Insert test data
+        await Promise.all(Array(operations).fill(0).map((_, i) => {
+            return new Promise<void>((resolve) => {
+                db.insertRecord("Log", {
+                    message: `Operation ${i % 2 === 0 ? 'even' : 'odd'}`,
+                    timestamp
+                });
+                resolve();
+            });
+        }));
+
+        // Test concurrent filtered reads
+        const promises = [
+            // Read even operations
+            Promise.all(Array(10).fill(0).map(() => {
+                return new Promise<void>((resolve) => {
+                    const evenLogs = db.fetchRecordsWithCondition(
+                        "Log",
+                        "message = ?",
+                        ["Operation even"]
+                    );
+                    expect(evenLogs.length).toBe(Math.ceil(operations / 2));
+                    resolve();
+                });
+            })),
+            // Read odd operations
+            Promise.all(Array(10).fill(0).map(() => {
+                return new Promise<void>((resolve) => {
+                    const oddLogs = db.fetchRecordsWithCondition(
+                        "Log",
+                        "message = ?",
+                        ["Operation odd"]
+                    );
+                    expect(oddLogs.length).toBe(Math.floor(operations / 2));
+                    resolve();
+                });
+            }))
+        ];
+
+        await Promise.all(promises.flat());
+    });
+
+    test("parallel filtered iteration", async () => {
+        for (let i = 0; i < 1000; i++) {
+            db.insertRecord("Counter", { value: i });
+        }
+
+        const iteratorPromises = [
+            // Iterate over even values
+            (async () => {
+                let count = 0;
+                for await (const record of db.recordsIterator(
+                    "Counter",
+                    100,
+                    "value % 2 = 0",
+                    []
+                )) {
+                    expect(record.value as number % 2).toBe(0);
+                    count++;
+                }
+                expect(count).toBe(500); // Half of 1000
+            })(),
+            // Iterate over odd values
+            (async () => {
+                let count = 0;
+                for await (const record of db.recordsIterator(
+                    "Counter",
+                    100,
+                    "value % 2 = 1",
+                    []
+                )) {
+                    expect(record.value as number % 2).toBe(1);
+                    count++;
+                }
+                expect(count).toBe(500); // Half of 1000
+            })()
+        ];
+
+        await Promise.all(iteratorPromises);
+    });
 });
 
 describe("Multi-Instance Concurrent Operations", () => {
