@@ -131,5 +131,23 @@ describe("BunLiteDB", () => {
         const firstPost = posts[0];
         expect(firstPost?.userId).toBe(users[0].id);
     });
+
+    test("record count operations", () => {
+        // Insert some test records
+        db.insertRecord("Users", { name: "User 1", email: "user1@example.com" });
+        db.insertRecord("Users", { name: "User 2", email: "user2@example.com" });
+        db.insertRecord("Users", { name: "User 3", email: "user3@example.com" });
+
+        // Test total count
+        expect(db.getRecordCount("Users")).toBe(3);
+
+        // Test count with condition
+        const count = db.getRecordCount("Users", "name LIKE ?", ["User 2"]);
+        expect(count).toBe(1);
+
+        // Test for no results
+        const emptyCount = db.getRecordCount("Users", "name LIKE ?", ["foo"]);
+        expect(emptyCount).toBe(0);
+    });
 });
 

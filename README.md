@@ -87,6 +87,23 @@ const user = db.fetchRecordsWithCondition(
 
 // Get schema information
 const schema = db.getSchema("users");
+
+// Get record count
+const totalUsers = db.getRecordCount("users");
+
+// Get count with conditions
+const activeUsers = db.getRecordCount(
+  "users",
+  "status = ?",
+  ["active"]
+);
+
+// Complex counting
+const recentAdmins = db.getRecordCount(
+  "users",
+  "role = ? AND created_at > ?",
+  ["admin", Date.now() - 86400000] // Admins created in last 24 hours
+);
 ```
 
 #### Using Pagination

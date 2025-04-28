@@ -384,6 +384,8 @@ export default class BunLiteDB<
      * @param tableName Name of the table to query
      * @param page Page number (starts from 1)
      * @param pageSize Number of records per page
+     * @param condition Optional WHERE clause condition
+     * @param values Optional array of values to bind to the condition
      * @returns Array of records for the requested page
      * @throws {Error} If table name is invalid or pagination parameters are invalid
      */
@@ -408,6 +410,8 @@ export default class BunLiteDB<
      * Creates an iterator that yields records one at a time
      * @param tableName Name of the table to iterate
      * @param batchSize Number of records to fetch per batch (default: 1000)
+     * @param condition Optional WHERE clause condition
+     * @param values Optional array of values to bind to the condition
      * @yields Records from the table one at a time
      * @throws {Error} If table name is invalid
      */
@@ -434,6 +438,26 @@ export default class BunLiteDB<
             if (batch.length < batchSize) break;
             offset += batchSize;
         }
+    }
+
+    /**
+     * Gets the count of records in a table
+     * @param tableName Name of the table to count records from
+     * @param condition Optional WHERE clause condition
+     * @param values Optional values to bind to the condition
+     * @returns Number of records matching the condition
+     * @throws {Error} If table name is invalid
+     */
+    getRecordCount<Table extends TableNames<InferSchemaType<T>>>(
+        tableName: Table,
+        condition?: string,
+        values: SQLQueryBindings[] = []
+    ): number {
+        this.validateTableName(tableName);
+        const whereClause = condition ? `WHERE ${condition}` : '';
+        const query = `SELECT COUNT(*) as count FROM ${tableName} ${whereClause}`;
+        const result = this.db.query(query).get(...values) as { count: number };
+        return result.count;
     }
 
     /**
